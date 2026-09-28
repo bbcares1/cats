@@ -93,7 +93,7 @@ public class ManagerApprovalController {
         }
         int year = application.getStartDate().getYear();
         AccountBalance balance = entitlements.find(application.getEmployee().getId(), year).orElse(null);
-        model.addAttribute("application", application);
+        model.addAttribute("app", application);
         model.addAttribute("view", ViewMapper.applicationView(application,
                 application.getStatus().isPendingReview() && !application.getEmployee().getId().equals(manager.getId())));
         model.addAttribute("balance", balance);

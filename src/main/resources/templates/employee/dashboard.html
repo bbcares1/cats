@@ -99,15 +99,15 @@
                 </tr>
                 </thead>
                 <tbody>
-                <tr th:each="application : ${completable}">
+                <tr th:each="completableApp : ${completable}">
                     <td>
-                        <a th:href="@{'/employee/applications/' + ${application.id}}"
-                           th:text="${application.referenceNo}">APP-2026-0002</a>
-                        <div class="small muted" th:text="${application.courseTitle}">Course</div>
+                        <a th:href="@{'/employee/applications/' + ${completableApp.id}}"
+                           th:text="${completableApp.referenceNo}">APP-2026-0002</a>
+                        <div class="small muted" th:text="${completableApp.courseTitle}">Course</div>
                     </td>
-                    <td th:text="${#temporals.format(application.startDate, 'd MMM yyyy')} + ' to ' + ${#temporals.format(application.endDate, 'd MMM yyyy')}">1 Mar 2026</td>
-                    <td class="num" th:text="${application.reservedUnits / 2.0}">1.0</td>
-                    <td class="money" th:text="'$' + ${#numbers.formatDecimal(application.courseFee, 1, 2)}">$0.00</td>
+                    <td th:text="${#temporals.format(completableApp.startDate, 'd MMM yyyy')} + ' to ' + ${#temporals.format(completableApp.endDate, 'd MMM yyyy')}">1 Mar 2026</td>
+                    <td class="num" th:text="${completableApp.reservedUnits / 2.0}">1.0</td>
+                    <td class="money" th:text="'$' + ${#numbers.formatDecimal(completableApp.courseFee, 1, 2)}">$0.00</td>
                 </tr>
                 </tbody>
             </table>

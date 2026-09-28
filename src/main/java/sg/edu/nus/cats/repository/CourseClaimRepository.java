@@ -19,14 +19,15 @@ public interface CourseClaimRepository extends JpaRepository<CourseClaim, Long> 
     @EntityGraph(attributePaths = { "application", "application.employee", "approver", "reviewedBy", "reimbursedBy" })
     Optional<CourseClaim> findWithDetailsById(Long id);
 
-    @EntityGraph(attributePaths = { "application", "application.employee" })
+    @EntityGraph(attributePaths = { "application", "application.employee", "approver", "documents" })
     List<CourseClaim> findByApproverIdAndStatusInOrderBySubmittedAtAsc(Long approverId,
             Collection<ClaimStatus> statuses);
 
     @EntityGraph(attributePaths = { "application", "application.employee" })
     List<CourseClaim> findByApplicationEmployeeIdOrderBySubmittedAtDesc(Long employeeId);
 
-    @EntityGraph(attributePaths = { "application", "application.employee", "approver", "reviewedBy" })
+    @EntityGraph(attributePaths = { "application", "application.employee", "approver", "reviewedBy", "reimbursedBy",
+            "documents" })
     List<CourseClaim> findByStatusOrderBySubmittedAtAsc(ClaimStatus status);
 
     long countByApproverIdAndStatusIn(Long approverId, Collection<ClaimStatus> statuses);
@@ -35,6 +36,7 @@ public interface CourseClaimRepository extends JpaRepository<CourseClaim, Long> 
 
     long countByStatusIn(Collection<ClaimStatus> statuses);
 
+    @EntityGraph(attributePaths = { "application", "application.employee", "approver" })
     @Query("select c from CourseClaim c where c.application.employee.id = :employeeId")
     List<CourseClaim> findByEmployee(@Param("employeeId") Long employeeId);
 }

@@ -6,7 +6,7 @@
 <main class="container">
     <div th:replace="~{fragments/layout :: flash}"></div>
 
-    <h1 th:text="${applicationId == null ? 'Submit a training application' : 'Update application ' + application.referenceNo}">
+    <h1 th:text="${applicationId == null ? 'Submit a training application' : 'Update application ' + app.referenceNo}">
         Submit a training application
     </h1>
     <p class="card-note">
@@ -79,7 +79,7 @@
                     <div class="field">
                         <label for="startSession">Start session</label>
                         <select id="startSession" th:field="*{startSession}">
-                            <option th:each="session : ${sessions}" th:value="${session}" th:text="${session.label}">AM</option>
+                            <option th:each="slot : ${sessions}" th:value="${slot}" th:text="${slot.label}">AM</option>
                         </select>
                     </div>
                 </div>
@@ -93,7 +93,7 @@
                     <div class="field">
                         <label for="endSession">End session</label>
                         <select id="endSession" th:field="*{endSession}">
-                            <option th:each="session : ${sessions}" th:value="${session}" th:text="${session.label}">PM</option>
+                            <option th:each="slot : ${sessions}" th:value="${slot}" th:text="${slot.label}">PM</option>
                         </select>
                     </div>
                 </div>

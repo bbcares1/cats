@@ -20,7 +20,7 @@ public interface CourseApplicationRepository extends JpaRepository<CourseApplica
 
     Optional<CourseApplication> findByEmployeeIdAndClientRequestId(Long employeeId, String clientRequestId);
 
-    @EntityGraph(attributePaths = { "employee", "approver", "reviewedBy" })
+    @EntityGraph(attributePaths = { "employee", "approver", "reviewedBy", "days" })
     Optional<CourseApplication> findWithDetailsById(Long id);
 
     @Query("""
@@ -117,7 +117,7 @@ public interface CourseApplicationRepository extends JpaRepository<CourseApplica
             @Param("start") LocalDate start, @Param("end") LocalDate end,
             @Param("statuses") Collection<ApplicationStatus> statuses);
 
-    @EntityGraph(attributePaths = { "employee", "catalogue", "catalogue.provider" })
+    @EntityGraph(attributePaths = { "employee", "approver", "catalogue", "catalogue.provider" })
     List<CourseApplication> findByEmployeeIdAndStatusInOrderByStartDateDesc(Long employeeId,
             Collection<ApplicationStatus> statuses);
 

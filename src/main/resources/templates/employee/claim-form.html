@@ -33,7 +33,7 @@
                     <label for="amount">Amount claimed (SGD)</label>
                     <input type="number" step="0.01" min="0.01" id="amount" th:field="*{amount}" required/>
                     <p class="help">The course fee is
-                        S$<span th:text="${@fmt.money(application.courseFee)}">0.00</span>.
+                        S$<span th:text="${@fmt.money(app.courseFee)}">0.00</span>.
                         Claim what you actually paid.</p>
                 </div>
 
@@ -63,19 +63,19 @@
             <h2>Course application</h2>
             <dl class="definition">
                 <dt>Reference</dt>
-                <dd th:text="${application.referenceNo}">APP-2026-0001</dd>
+                <dd th:text="${app.referenceNo}">APP-2026-0001</dd>
                 <dt>Course</dt>
-                <dd th:text="${application.courseTitle}">Course</dd>
+                <dd th:text="${app.courseTitle}">Course</dd>
                 <dt>Provider</dt>
-                <dd th:text="${application.providerName}">Provider</dd>
+                <dd th:text="${app.providerName}">Provider</dd>
                 <dt>Category</dt>
-                <dd th:text="${application.categoryCode.displayName}">External Training</dd>
+                <dd th:text="${app.categoryCode.displayName}">External Training</dd>
                 <dt>Period</dt>
-                <dd th:text="${@fmt.period(application)}">1 Mar 2026</dd>
+                <dd th:text="${@fmt.period(app)}">1 Mar 2026</dd>
                 <dt>Completed</dt>
-                <dd th:text="${@fmt.dateTime(application.completedAt)}">1 Mar 2026</dd>
+                <dd th:text="${@fmt.dateTime(app.completedAt)}">1 Mar 2026</dd>
                 <dt>Approving manager</dt>
-                <dd th:text="${application.approver == null ? '-' : application.approver.fullName}">Manager</dd>
+                <dd th:text="${app.approver == null ? '-' : app.approver.fullName}">Manager</dd>
             </dl>
             <p class="muted small">
                 Supporting documents stay attached to the revision they were uploaded with, so the reviewer always

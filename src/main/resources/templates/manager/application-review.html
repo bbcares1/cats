@@ -1,19 +1,19 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="en">
-<head th:replace="~{fragments/layout :: head('Review ' + ${application.referenceNo})}"></head>
+<head th:replace="~{fragments/layout :: head('Review ' + ${app.referenceNo})}"></head>
 <body>
 <div th:replace="~{fragments/layout :: topbar('approvals')}"></div>
 <main class="container">
     <div th:replace="~{fragments/layout :: flash}"></div>
 
     <h1>
-        <span th:text="${application.referenceNo}">APP-2026-0001</span>
+        <span th:text="${app.referenceNo}">APP-2026-0001</span>
         <span class="status" th:classappend="'status-' + ${view.statusCss()}" th:text="${view.statusLabel()}">Applied</span>
     </h1>
     <p class="card-note">
-        <span th:text="${application.employee.fullName}">Alice Tan</span> —
-        <span th:text="${application.employee.department}">Digital Services</span> —
-        <span th:text="${application.courseTitle}">Course</span> —
+        <span th:text="${app.employee.fullName}">Alice Tan</span> —
+        <span th:text="${app.employee.department}">Digital Services</span> —
+        <span th:text="${app.courseTitle}">Course</span> —
         <span th:text="${view.categoryLabel()}">External</span> —
         <span th:text="${view.periodLabel()}">1 Mar 2026</span>
     </p>
@@ -27,14 +27,14 @@
             <h2>The request</h2>
             <dl class="definition">
                 <dt>Provider</dt>
-                <dd th:text="${application.providerName}">Provider</dd>
+                <dd th:text="${app.providerName}">Provider</dd>
                 <dt>Training days requested</dt>
                 <dd><span th:text="${view.units() / 2.0}">1.0</span> day(s), fee
-                    S$<span th:text="${@fmt.money(application.courseFee)}">0.00</span></dd>
+                    S$<span th:text="${@fmt.money(app.courseFee)}">0.00</span></dd>
                 <dt>Justification</dt>
-                <dd th:text="${application.justification}">Reason</dd>
+                <dd th:text="${app.justification}">Reason</dd>
                 <dt>How the learning will be shared</dt>
-                <dd th:text="${application.workDissemination}">Plan</dd>
+                <dd th:text="${app.workDissemination}">Plan</dd>
                 <dt>Submitted</dt>
                 <dd th:text="${view.submittedLabel()}">1 Mar 2026</dd>
             </dl>
@@ -45,7 +45,7 @@
                 <tr><th>Date</th><th>Day</th><th>Session</th><th class="num">Days</th></tr>
                 </thead>
                 <tbody>
-                <tr th:each="day : ${application.days}">
+                <tr th:each="day : ${app.days}">
                     <td th:text="${@fmt.date(day.trainingDate)}">1 Mar 2026</td>
                     <td th:text="${day.trainingDate.dayOfWeek}">MONDAY</td>
                     <td th:text="${day.sessionCode.label}">AM</td>
@@ -131,7 +131,7 @@
         <div class="card" th:if="${view.decisionAllowed()}">
             <h2>Decision</h2>
             <p class="card-note">A reason is mandatory and is shown to the employee. Decisions are final.</p>
-            <form th:action="@{'/manager/applications/' + ${application.id} + '/decision'}"
+            <form th:action="@{'/manager/applications/' + ${app.id} + '/decision'}"
                   th:object="${decisionForm}" method="post"
                   onsubmit="return confirm('Decisions are final. Record this decision?');">
                 <input type="hidden" th:field="*{version}"/>
@@ -152,8 +152,8 @@
                 This application can no longer be decided: it is
                 <span th:text="${view.statusLabel()}">Approved</span>.
             </p>
-            <p class="muted small" th:if="${application.reviewComment != null}">
-                Recorded reason: <span th:text="${application.reviewComment}">Reason</span>
+            <p class="muted small" th:if="${app.reviewComment != null}">
+                Recorded reason: <span th:text="${app.reviewComment}">Reason</span>
             </p>
         </div>
 
@@ -176,7 +176,7 @@
 
     <div class="actions-bar">
         <a class="button secondary" th:href="@{/manager/approvals}">Back to the queue</a>
-        <a class="button secondary" th:href="@{/manager/team/history(employeeId=${application.employee.id})}">This employee's history</a>
+        <a class="button secondary" th:href="@{/manager/team/history(employeeId=${app.employee.id})}">This employee's history</a>
     </div>
 </main>
 <footer class="site" th:replace="~{fragments/layout :: footer}"></footer>

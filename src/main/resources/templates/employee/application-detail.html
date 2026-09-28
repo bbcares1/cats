@@ -1,17 +1,17 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org" lang="en">
-<head th:replace="~{fragments/layout :: head('Application ' + ${application.referenceNo})}"></head>
+<head th:replace="~{fragments/layout :: head('Application ' + ${app.referenceNo})}"></head>
 <body>
 <div th:replace="~{fragments/layout :: topbar('applications')}"></div>
 <main class="container">
     <div th:replace="~{fragments/layout :: flash}"></div>
 
     <h1>
-        <span th:text="${application.referenceNo}">APP-2026-0001</span>
+        <span th:text="${app.referenceNo}">APP-2026-0001</span>
         <span class="status" th:classappend="'status-' + ${view.statusCss()}" th:text="${view.statusLabel()}">Applied</span>
     </h1>
     <p class="card-note">
-        <span th:text="${application.courseTitle}">Course</span> —
+        <span th:text="${app.courseTitle}">Course</span> —
         <span th:text="${view.categoryLabel()}">External</span> —
         <span th:text="${view.periodLabel()}">1 Mar 2026 (AM)</span>
     </p>
@@ -21,44 +21,44 @@
             <h2>Application</h2>
             <dl class="definition">
                 <dt>Course title</dt>
-                <dd th:text="${application.courseTitle}">Course</dd>
+                <dd th:text="${app.courseTitle}">Course</dd>
                 <dt>Category</dt>
-                <dd th:text="${application.categoryCode.displayName}">External Training</dd>
+                <dd th:text="${app.categoryCode.displayName}">External Training</dd>
                 <dt>Provider</dt>
-                <dd th:text="${application.providerName}">Provider</dd>
+                <dd th:text="${app.providerName}">Provider</dd>
                 <dt>Period</dt>
                 <dd th:text="${view.periodLabel()}">1 Mar 2026 (AM)</dd>
                 <dt>Training days</dt>
                 <dd>
-                    <span th:text="${application.reservedUnits / 2.0}">1.0</span> day unit(s)
+                    <span th:text="${app.reservedUnits / 2.0}">1.0</span> day unit(s)
                     <span class="muted"
-                          th:text="'(' + ${application.days.size()} + ' generated training day record(s))'">(1)</span>
+                          th:text="'(' + ${app.days.size()} + ' generated training day record(s))'">(1)</span>
                 </dd>
                 <dt>Course fee</dt>
-                <dd th:text="'S$' + ${#numbers.formatDecimal(application.courseFee, 1, 2)}">S$0.00</dd>
+                <dd th:text="'S$' + ${#numbers.formatDecimal(app.courseFee, 1, 2)}">S$0.00</dd>
                 <dt>Approving manager</dt>
-                <dd th:text="${application.approver == null ? '-' : application.approver.fullName}">Manager</dd>
+                <dd th:text="${app.approver == null ? '-' : app.approver.fullName}">Manager</dd>
                 <dt>Submitted</dt>
                 <dd th:text="${view.submittedLabel()}">1 Mar 2026, 09:00</dd>
                 <dt>Justification</dt>
-                <dd th:text="${application.justification}">Reason</dd>
+                <dd th:text="${app.justification}">Reason</dd>
                 <dt>Work dissemination</dt>
-                <dd th:text="${application.workDissemination}">Sharing plan</dd>
-                <dt th:if="${application.reviewComment != null}">Decision comment</dt>
-                <dd th:if="${application.reviewComment != null}" th:text="${application.reviewComment}">Comment</dd>
-                <dt th:if="${application.cancelReason != null}">Cancellation reason</dt>
-                <dd th:if="${application.cancelReason != null}" th:text="${application.cancelReason}">Reason</dd>
-                <dt th:if="${application.completionComment != null}">Completion notes</dt>
-                <dd th:if="${application.completionComment != null}" th:text="${application.completionComment}">Notes</dd>
+                <dd th:text="${app.workDissemination}">Sharing plan</dd>
+                <dt th:if="${app.reviewComment != null}">Decision comment</dt>
+                <dd th:if="${app.reviewComment != null}" th:text="${app.reviewComment}">Comment</dd>
+                <dt th:if="${app.cancelReason != null}">Cancellation reason</dt>
+                <dd th:if="${app.cancelReason != null}" th:text="${app.cancelReason}">Reason</dd>
+                <dt th:if="${app.completionComment != null}">Completion notes</dt>
+                <dd th:if="${app.completionComment != null}" th:text="${app.completionComment}">Notes</dd>
             </dl>
 
             <div class="actions-bar" th:if="${!allowedActions.isEmpty()}">
                 <a class="button secondary" th:if="${allowedActions.contains('edit')}"
-                   th:href="@{'/employee/applications/' + ${application.id} + '/edit'}">Change this application</a>
+                   th:href="@{'/employee/applications/' + ${app.id} + '/edit'}">Change this application</a>
                 <a class="button secondary" th:if="${allowedActions.contains('complete')}"
-                   th:href="@{'#complete-' + ${application.id}}">Mark as completed</a>
+                   th:href="@{'#complete-' + ${app.id}}">Mark as completed</a>
                 <a class="button secondary" th:if="${canClaim}"
-                   th:href="@{/employee/claims/new(applicationId=${application.id})}">Claim the fee</a>
+                   th:href="@{/employee/claims/new(applicationId=${app.id})}">Claim the fee</a>
             </div>
         </div>
 
@@ -123,7 +123,7 @@
                 </p>
                 <p th:if="${canClaim}">
                     This approved and completed course can be claimed.
-                    <a th:href="@{/employee/claims/new(applicationId=${application.id})}">Submit a claim</a>.
+                    <a th:href="@{/employee/claims/new(applicationId=${app.id})}">Submit a claim</a>.
                 </p>
             </div>
             <div th:if="${claim != null}">
@@ -163,8 +163,8 @@
             <div th:if="${allowedActions.contains('cancel')}">
                 <h3>Cancel this application</h3>
                 <p class="card-note">Cancelling releases the reserved training days and budget immediately.</p>
-                <form th:action="@{'/employee/applications/' + ${application.id} + '/cancel'}" method="post">
-                    <input type="hidden" name="version" th:value="${application.version}"/>
+                <form th:action="@{'/employee/applications/' + ${app.id} + '/cancel'}" method="post">
+                    <input type="hidden" name="version" th:value="${app.version}"/>
                     <div class="field">
                         <label for="cancelReason">Reason for cancelling</label>
                         <textarea id="cancelReason" name="reason" rows="2" maxlength="500" required></textarea>
@@ -180,8 +180,8 @@
                     Only an approved course whose end date has passed can be completed
                     (today is <span th:text="${@fmt.date(today)}">1 Mar 2026</span>).
                 </p>
-                <form th:action="@{'/employee/applications/' + ${application.id} + '/complete'}" method="post">
-                    <input type="hidden" name="version" th:value="${application.version}"/>
+                <form th:action="@{'/employee/applications/' + ${app.id} + '/complete'}" method="post">
+                    <input type="hidden" name="version" th:value="${app.version}"/>
                     <div class="field">
                         <label for="experience">What you learned and how you will apply it</label>
                         <textarea id="experience" name="experience" rows="3" maxlength="1000" required></textarea>
@@ -197,9 +197,9 @@
                     The record is kept for reporting but disappears from your active list. Deletion is possible only
                     while no decision has been taken.
                 </p>
-                <form th:action="@{'/employee/applications/' + ${application.id} + '/delete'}" method="post"
+                <form th:action="@{'/employee/applications/' + ${app.id} + '/delete'}" method="post"
                       onsubmit="return confirm('Withdraw this application? The record is kept for reporting.');">
-                    <input type="hidden" name="version" th:value="${application.version}"/>
+                    <input type="hidden" name="version" th:value="${app.version}"/>
                     <button class="danger" type="submit">Withdraw application</button>
                 </form>
             </div>

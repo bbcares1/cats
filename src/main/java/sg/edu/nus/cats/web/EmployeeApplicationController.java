@@ -126,7 +126,7 @@ public class EmployeeApplicationController {
     private void prepareForm(Model model, ApplicationForm form, Long applicationId, CourseApplication application) {
         model.addAttribute("form", form);
         model.addAttribute("applicationId", applicationId);
-        model.addAttribute("application", application);
+        model.addAttribute("app", application);
         model.addAttribute("categories", CategoryCode.values());
         model.addAttribute("courses", catalogue.searchCourses(null));
         model.addAttribute("sessions", sg.edu.nus.cats.domain.enums.SessionCode.values());
@@ -185,7 +185,7 @@ public class EmployeeApplicationController {
     public String detail(@PathVariable Long id, Model model) {
         Employee employee = currentUser.require();
         CourseApplication application = applications.requireOwned(employee.getId(), id);
-        model.addAttribute("application", application);
+        model.addAttribute("app", application);
         model.addAttribute("view", ViewMapper.applicationView(application, false));
         model.addAttribute("timeline", audit.timeline(AggregateType.APPLICATION, application.getReferenceNo()));
         model.addAttribute("ledger", ledger.forApplication(application.getId()));

@@ -2,6 +2,7 @@ package sg.edu.nus.cats.repository;
 
 import java.util.List;
 
+import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -23,6 +24,7 @@ public interface CourseCatalogueRepository extends JpaRepository<CourseCatalogue
     @Query("select c from CourseCatalogue c join fetch c.category left join fetch c.provider order by c.title asc")
     List<CourseCatalogue> findAllWithDetails();
 
+    @EntityGraph(attributePaths = { "category", "provider" })
     List<CourseCatalogue> findByActiveTrueOrderByTitleAsc();
 
     boolean existsByProviderId(Long providerId);

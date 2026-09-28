@@ -81,7 +81,7 @@ public class ClaimController {
         form.setApproverId(application.getApprover() == null ? null : application.getApprover().getId());
         form.setClientRequestId(java.util.UUID.randomUUID().toString());
         model.addAttribute("form", form);
-        model.addAttribute("application", application);
+        model.addAttribute("app", application);
         model.addAttribute("claim", null);
         return "employee/claim-form";
     }
@@ -125,7 +125,7 @@ public class ClaimController {
         form.setVersion(claim.getVersion());
         form.setClientRequestId(java.util.UUID.randomUUID().toString());
         model.addAttribute("form", form);
-        model.addAttribute("application", claim.getApplication());
+        model.addAttribute("app", claim.getApplication());
         model.addAttribute("claim", claim);
         return "employee/claim-form";
     }

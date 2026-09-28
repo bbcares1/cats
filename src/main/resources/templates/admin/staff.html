@@ -63,7 +63,8 @@
                     <a class="button small secondary" th:href="@{'/admin/staff/' + ${row.id} + '/edit'}">Edit</a>
                     <form class="inline" th:if="${row.accountEnabled}"
                           th:action="@{'/admin/staff/' + ${row.id} + '/archive'}" method="post"
-                          th:onsubmit="'return confirm(\'Disable the login of ' + ${row.fullName} + '?\');'">
+                          th:attr="data-staff-name=${row.fullName}"
+                          onsubmit="return confirm('Disable the login of ' + this.dataset.staffName + '?');">
                         <button class="danger small" type="submit">Disable login</button>
                     </form>
                 </td>

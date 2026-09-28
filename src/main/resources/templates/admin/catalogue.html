@@ -157,9 +157,9 @@
                     <tbody>
                     <tr th:each="code : ${categories}">
                         <td th:text="${code.displayName}">External</td>
-                        <td th:text="${code.requiresFee() ? 'Required' : 'Always zero'}">Required</td>
-                        <td th:text="${code.allowsHalfDay() ? 'Allowed' : 'Full days only'}">Allowed</td>
-                        <td th:text="${code.isReimbursable() ? 'Yes' : 'No'}">Yes</td>
+                        <td th:text="${code.code.requiresFee() ? 'Required' : 'Always zero'}">Required</td>
+                        <td th:text="${code.code.allowsHalfDay() ? 'Allowed' : 'Full days only'}">Allowed</td>
+                        <td th:text="${code.code.isReimbursable() ? 'Yes' : 'No'}">Yes</td>
                     </tr>
                     </tbody>
                 </table>

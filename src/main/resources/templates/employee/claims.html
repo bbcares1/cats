@@ -67,12 +67,12 @@
             </tr>
             </thead>
             <tbody>
-            <tr th:each="application : ${claimable}">
-                <td th:text="${application.referenceNo}">APP-2026-0001</td>
-                <td th:text="${application.courseTitle}">Course</td>
-                <td th:text="${@fmt.period(application)}">1 Mar 2026</td>
-                <td class="money" th:text="'$' + ${@fmt.money(application.courseFee)}">$0.00</td>
-                <td><a class="button small" th:href="@{/employee/claims/new(applicationId=${application.id})}">Claim the fee</a></td>
+            <tr th:each="claimableApp : ${claimable}">
+                <td th:text="${claimableApp.referenceNo}">APP-2026-0001</td>
+                <td th:text="${claimableApp.courseTitle}">Course</td>
+                <td th:text="${@fmt.period(claimableApp)}">1 Mar 2026</td>
+                <td class="money" th:text="'$' + ${@fmt.money(claimableApp.courseFee)}">$0.00</td>
+                <td><a class="button small" th:href="@{/employee/claims/new(applicationId=${claimableApp.id})}">Claim the fee</a></td>
             </tr>
             </tbody>
         </table>
