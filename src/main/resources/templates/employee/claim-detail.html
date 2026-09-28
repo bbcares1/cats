@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments/layout :: head('Claim #' + ${claim.id})}"></head>
+<body>
+<div th:replace="~{fragments/layout :: topbar('claims')}"></div>
+<main class="container">
+    <div th:replace="~{fragments/layout :: flash}"></div>
+
+    <h1>
+        Claim #<span th:text="${claim.id}">1</span>
+        <span class="status"
+              th:classappend="'status-' + ${claim.status.name() == 'SUBMITTED' ? 'pending' : (claim.status.name() == 'REJECTED' ? 'rejected' : 'approved')}"
+              th:text="${claim.status}">SUBMITTED</span>
+        <span class="muted small" th:text="'revision ' + ${claim.revision}">revision 1</span>
+    </h1>
+    <p class="card-note">
+        <span th:text="${claim.application.courseTitle}">Course</span> —
+        <span th:text="${@fmt.period(claim.application)}">1 Mar 2026</span> —
+        S$<span th:text="${@fmt.money(claim.amount)}">0.00</span>
+    </p>
+
+    <div class="grid two">
+        <div class="card">
+            <h2>Claim</h2>
+            <dl class="definition">
+                <dt>Application</dt>
+                <dd><a th:href="@{'/employee/applications/' + ${claim.application.id}}" th:text="${claim.application.referenceNo}">APP-2026-0001</a></dd>
+                <dt>Amount claimed</dt>
+                <dd th:text="'S$' + ${@fmt.money(claim.amount)}">S$0.00</dd>
+                <dt>Paid by employee</dt>
+                <dd th:text="${claim.paidByEmployee ? 'Yes' : 'No — company sponsored'}">Yes</dd>
+                <dt>Approving manager</dt>
+                <dd th:text="${claim.approver.fullName}">Manager</dd>
+                <dt>Submitted</dt>
+                <dd th:text="${@fmt.dateTime(claim.submittedAt)}">1 Mar 2026</dd>
+                <dt th:if="${claim.reviewedBy != null}">Decided by</dt>
+                <dd th:if="${claim.reviewedBy != null}"
+                    th:text="${claim.reviewedBy.fullName + ' on ' + @fmt.dateTime(claim.reviewedAt)}">Manager</dd>
+                <dt th:if="${claim.reviewComment != null}">Decision comment</dt>
+                <dd th:if="${claim.reviewComment != null}" th:text="${claim.reviewComment}">Comment</dd>
+                <dt th:if="${claim.reimbursedAt != null}">Reimbursed</dt>
+                <dd th:if="${claim.reimbursedAt != null}"
+                    th:text="${@fmt.dateTime(claim.reimbursedAt)}">1 Mar 2026</dd>
+                <dt th:if="${claim.reimbursementReference != null}">Payment reference</dt>
+                <dd th:if="${claim.reimbursementReference != null}" th:text="${claim.reimbursementReference}">PAY-1</dd>
+            </dl>
+
+            <div class="actions-bar" th:if="${claim.status.isRevisable()}">
+                <a class="button" th:href="@{'/employee/claims/' + ${claim.id} + '/revise'}">Revise and resubmit</a>
+            </div>
+            <p class="muted small" th:if="${claim.status.name() == 'APPROVED'}">
+                The manager approved this claim. Finance marks it as reimbursed once the payment is made — approved
+                claims still reserve budget until then.
+            </p>
+        </div>
+
+        <div class="card">
+            <h2>Attachments</h2>
+            <div class="empty" th:if="${documents.isEmpty()}">No attachment was uploaded with this revision.</div>
+            <table th:unless="${documents.isEmpty()}">
+                <thead>
+                <tr>
+                    <th>Type</th>
+                    <th>File</th>
+                    <th class="num">Size</th>
+                    <th>Uploaded</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="document : ${documents}">
+                    <td th:text="${document.documentType.displayName}">Receipt</td>
+                    <td><a th:href="@{'/claims/documents/' + ${document.id}}"
+                           th:text="${document.originalName}">receipt.pdf</a></td>
+                    <td class="num" th:text="${document.sizeLabel}">12 KB</td>
+                    <td th:text="${@fmt.dateTime(document.uploadedAt)}">1 Mar 2026</td>
+                </tr>
+                </tbody>
+            </table>
+            <p class="muted small">
+                Only you, your approving manager and an administrator may open these files; every download is audited.
+            </p>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Audit trail</h2>
+        <ol class="timeline">
+            <li th:each="event : ${timeline}">
+                <div class="when" th:text="${@fmt.dateTime(event.createdAt)}">1 Mar 2026</div>
+                <div class="what">
+                    <span th:text="${event.eventType}">SUBMITTED</span>
+                    <span class="muted"
+                          th:text="${event.fromState == null ? '' : event.fromState + ' to ' + event.toState}">Submitted</span>
+                </div>
+                <div class="why" th:if="${event.reason != null}" th:text="${event.reason}">Reason</div>
+                <div class="why" th:text="'Actor: ' + ${event.actorLabel}">Actor</div>
+            </li>
+        </ol>
+    </div>
+
+    <div class="actions-bar">
+        <a class="button secondary" th:href="@{/employee/claims}">Back to my claims</a>
+    </div>
+</main>
+<footer class="site" th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments/layout :: head('Administration sign in')}"></head>
+<body>
+<div class="auth-wrap">
+    <div class="auth-card">
+        <h1>CATS administration sign in</h1>
+        <p class="subtitle">This door is only for accounts holding the administrator role.</p>
+
+        <div class="flash flash-error" th:if="${param.error}">
+            These credentials are not an active administrator account.
+        </div>
+        <div class="flash flash-success" th:if="${param.loggedOut}">
+            You have signed out of the administration console.
+        </div>
+
+        <form th:action="@{/admin/login}" method="post">
+            <div class="field">
+                <label for="username">Administrator username</label>
+                <input type="text" id="username" name="username" autocomplete="username" autofocus required/>
+            </div>
+            <div class="field">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" autocomplete="current-password" required/>
+            </div>
+            <button type="submit">Sign in to administration</button>
+        </form>
+
+        <div class="alt">
+            Not an administrator? <a th:href="@{/login}">Use the staff sign in</a>
+        </div>
+    </div>
+</div>
+</body>
+</html>

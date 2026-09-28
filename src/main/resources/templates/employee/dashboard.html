@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments/layout :: head('My training')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: topbar('dashboard')}"></div>
+<main class="container">
+    <div th:replace="~{fragments/layout :: flash}"></div>
+
+    <h1>My training <span class="muted" th:text="${year}">2026</span></h1>
+    <p class="card-note">
+        Signed in as <strong th:text="${employee.fullName}">Alice Tan</strong>
+        (<span th:text="${employee.staffNo}">E1001</span>, <span th:text="${employee.department}">ISS</span>).
+        Balances are Singapore dollars and half day units (2 units = 1 full day).
+    </p>
+
+    <div class="grid cards-4">
+        <div class="stat">
+            <p class="label">Remaining days</p>
+            <p class="value" th:text="${balance == null ? '-' : balance.getAvailableDaysLabel()}">6.0 day(s)</p>
+            <p class="hint" th:if="${balance == null}">
+                No <span th:text="${year}">2026</span> entitlement is configured yet.
+            </p>
+            <p class="hint" th:if="${balance != null}">
+                <span th:text="${balance.entitledUnits() / 2.0}">10.0</span> entitled,
+                <span th:text="${balance.usedUnits() / 2.0}">4.0</span> held by applications
+                (<span th:text="${balance.reservedUnits() / 2.0}">2.0</span> pending,
+                <span th:text="${balance.committedUnits() / 2.0}">2.0</span> approved).
+            </p>
+        </div>
+        <div class="stat">
+            <p class="label">Remaining budget</p>
+            <p class="value" th:text="'$' + ${#numbers.formatDecimal(balance == null ? 0 : balance.availableAmount(), 1, 2)}">$1,000.00</p>
+            <p class="hint" th:if="${balance != null}">
+                <span th:text="'$' + ${#numbers.formatDecimal(balance.budgetAmount(), 1, 2)}">$3,000.00</span> allocated,
+                <span th:text="'$' + ${#numbers.formatDecimal(balance.usedAmount(), 1, 2)}">$2,000.00</span> reserved or committed.
+            </p>
+        </div>
+        <div class="stat">
+            <p class="label">Waiting for approval</p>
+            <p class="value" th:text="${pendingCount}">2</p>
+            <p class="hint">Applications in Applied or Updated state.</p>
+        </div>
+        <div class="stat">
+            <p class="label">Ready to complete</p>
+            <p class="value" th:text="${completable.size()}">1</p>
+            <p class="hint">Approved courses whose end date has passed.</p>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Needs your action</h2>
+        <div class="empty" th:if="${needsAction.isEmpty()}">
+            Nothing is waiting for you. Every application has a final decision.
+        </div>
+        <table th:unless="${needsAction.isEmpty()}">
+            <thead>
+            <tr>
+                <th>Reference / course</th>
+                <th>Category</th>
+                <th>Period</th>
+                <th class="num">Days</th>
+                <th class="money">Fee (SGD)</th>
+                <th>Status</th>
+                <th>Why it is listed</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="entry : ${needsAction}">
+                <td>
+                    <a th:href="@{'/employee/applications/' + ${entry.row.id()}}" th:text="${entry.row.referenceNo()}">APP-2026-0001</a>
+                    <div class="small muted" th:text="${entry.row.courseTitle()}">Course</div>
+                </td>
+                <td th:text="${entry.row.categoryLabel()}">External</td>
+                <td th:text="${entry.row.periodLabel()}">1 Mar 2026 (AM)</td>
+                <td class="num" th:text="${entry.row.units() / 2.0}">1.0</td>
+                <td class="money" th:text="'$' + ${#numbers.formatDecimal(entry.row.fee(), 1, 2)}">$0.00</td>
+                <td><span class="status" th:classappend="'status-' + ${entry.row.statusCss()}"
+                          th:text="${entry.row.statusLabel()}">Applied</span></td>
+                <td class="small" th:text="${entry.reason}">Waiting for a decision</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="grid two">
+        <div class="card">
+            <h2>Ready to mark as completed</h2>
+            <p class="card-note">
+                Only an approved course that has already ended can be completed. Completing it unlocks the fee claim.
+            </p>
+            <div class="empty" th:if="${completable.isEmpty()}">No approved course is waiting to be completed.</div>
+            <table th:unless="${completable.isEmpty()}">
+                <thead>
+                <tr>
+                    <th>Reference / course</th>
+                    <th>Period</th>
+                    <th class="num">Days</th>
+                    <th class="money">Fee (SGD)</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="application : ${completable}">
+                    <td>
+                        <a th:href="@{'/employee/applications/' + ${application.id}}"
+                           th:text="${application.referenceNo}">APP-2026-0002</a>
+                        <div class="small muted" th:text="${application.courseTitle}">Course</div>
+                    </td>
+                    <td th:text="${#temporals.format(application.startDate, 'd MMM yyyy')} + ' to ' + ${#temporals.format(application.endDate, 'd MMM yyyy')}">1 Mar 2026</td>
+                    <td class="num" th:text="${application.reservedUnits / 2.0}">1.0</td>
+                    <td class="money" th:text="'$' + ${#numbers.formatDecimal(application.courseFee, 1, 2)}">$0.00</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="card">
+            <h2>My annual entitlements</h2>
+            <p class="card-note">Entitlement, what is held by applications, and what is left.</p>
+            <div class="empty" th:if="${balances.isEmpty()}">No annual entitlement has been configured yet.</div>
+            <table th:unless="${balances.isEmpty()}">
+                <thead>
+                <tr>
+                    <th>Year</th>
+                    <th class="num">Entitled</th>
+                    <th class="num">Used</th>
+                    <th class="num">Available</th>
+                    <th class="money">Budget (SGD)</th>
+                    <th class="money">Available (SGD)</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="entry : ${balances}">
+                    <td th:text="${entry.account.calendarYear}">2026</td>
+                    <td class="num" th:text="${entry.entitledUnits() / 2.0}">10.0</td>
+                    <td class="num" th:text="${entry.usedUnits() / 2.0}">4.0</td>
+                    <td class="num" th:text="${entry.availableUnits() / 2.0}">6.0</td>
+                    <td class="money" th:text="'$' + ${#numbers.formatDecimal(entry.budgetAmount(), 1, 2)}">$3,000.00</td>
+                    <td class="money" th:text="'$' + ${#numbers.formatDecimal(entry.availableAmount(), 1, 2)}">$1,000.00</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Five most recent applications</h2>
+        <div class="empty" th:if="${recent.isEmpty()}">You have not submitted any application yet.</div>
+        <table th:unless="${recent.isEmpty()}">
+            <thead>
+            <tr>
+                <th>Reference / course</th>
+                <th>Category</th>
+                <th>Period</th>
+                <th class="num">Days</th>
+                <th class="money">Fee (SGD)</th>
+                <th>Status</th>
+                <th>Submitted</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="row : ${recent}"
+                th:replace="~{fragments/layout :: applicationRow(${row}, '/employee/applications/' + ${row.id()})}"></tr>
+            </tbody>
+        </table>
+        <div class="actions-bar">
+            <a class="button" th:href="@{/employee/applications/new}">Submit a new application</a>
+            <a class="button secondary" th:href="@{/employee/applications}">See all my applications</a>
+        </div>
+    </div>
+</main>
+<footer class="site" th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

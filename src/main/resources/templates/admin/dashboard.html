@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments/layout :: head('Administration')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: topbar('admin')}"></div>
+<main class="container">
+    <div th:replace="~{fragments/layout :: flash}"></div>
+
+    <h1>Administration</h1>
+    <p class="card-note">
+        Administrative configuration only. Administrators never approve applications or claims and never see
+        other people's training records beyond what the audit trail contains.
+    </p>
+
+    <div class="stat-grid">
+        <a class="stat" th:href="@{/manager/approvals}">
+            <span class="stat-value" th:text="${pendingApplications}">0</span>
+            <span class="stat-label">Applications awaiting a manager</span>
+        </a>
+        <span class="stat">
+            <span class="stat-value" th:text="${undecidedClaims}">0</span>
+            <span class="stat-label">Claims awaiting a manager</span>
+        </span>
+        <a class="stat" th:href="@{/admin/reimbursements}">
+            <span class="stat-value" th:text="${awaitingReimbursement}">0</span>
+            <span class="stat-label">Claims awaiting reimbursement</span>
+        </a>
+        <a class="stat" th:href="@{/admin/operations}">
+            <span class="stat-value" th:text="${queuedEmails}">0</span>
+            <span class="stat-label">Emails queued</span>
+        </a>
+        <a class="stat" th:href="@{/admin/operations(failedOnly=true)}">
+            <span class="stat-value" th:text="${failedEmails}">0</span>
+            <span class="stat-label">Emails failed</span>
+        </a>
+        <a class="stat" th:href="@{/admin/staff}">
+            <span class="stat-value" th:text="${activeStaff}">0</span>
+            <span class="stat-label">Active staff</span>
+        </a>
+    </div>
+
+    <div class="grid two">
+        <div class="card">
+            <h2>Configuration</h2>
+            <ul class="link-list">
+                <li><a th:href="@{/admin/staff}">Staff accounts</a> — create accounts, set roles, disable access.</li>
+                <li><a th:href="@{/admin/approvals}">Reporting lines</a> — who approves whose applications.</li>
+                <li><a th:href="@{/admin/entitlements}">Annual entitlements</a> — training days and budget per employee.</li>
+                <li><a th:href="@{/admin/catalogue}">Course catalogue</a> — courses, providers, categories.</li>
+                <li><a th:href="@{/admin/holidays}">Public holidays</a> — excluded from training day counts.</li>
+                <li><a th:href="@{/admin/reimbursements}">Reimbursement queue</a> — record payments.</li>
+                <li><a th:href="@{/admin/operations}">Audit trail and email outbox</a>.</li>
+            </ul>
+        </div>
+
+        <div class="card">
+            <h2>Email outbox (latest)</h2>
+            <div class="empty" th:if="${outboxRows.isEmpty()}">The outbox is empty.</div>
+            <table th:unless="${outboxRows.isEmpty()}">
+                <thead><tr><th>Recipient</th><th>Template</th><th>Status</th><th>Attempts</th><th>Created</th></tr></thead>
+                <tbody>
+                <tr th:each="row : ${outboxRows}">
+                    <td th:text="${row.recipientEmail}">a@nus.edu.sg</td>
+                    <td th:text="${row.template}">APPLICATION_SUBMITTED</td>
+                    <td><span class="status" th:classappend="'status-' + ${row.status.name() == 'FAILED' ? 'rejected' : (row.status.name() == 'SENT' ? 'approved' : 'pending')}"
+                              th:text="${row.status}">PENDING</span></td>
+                    <td class="num" th:text="${row.attempts}">0</td>
+                    <td th:text="${@fmt.dateTime(row.createdAt)}">1 Mar 2026</td>
+                </tr>
+                </tbody>
+            </table>
+            <p class="muted small">
+                Mail is captured to the file system in this demonstration (<code>cats.mail.mode=capture</code>), so
+                nothing leaves the machine but the whole delivery path is exercised.
+            </p>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Recent audit events</h2>
+        <div class="empty" th:if="${recentAudit.isEmpty()}">No audit event has been recorded yet.</div>
+        <table th:unless="${recentAudit.isEmpty()}">
+            <thead>
+            <tr><th>When</th><th>Aggregate</th><th>Key</th><th>Event</th><th>Actor</th><th>From → To</th><th>Reason</th></tr>
+            </thead>
+            <tbody>
+            <tr th:each="row : ${recentAudit}">
+                <td th:text="${@fmt.dateTime(row.occurredAt)}">1 Mar 2026</td>
+                <td th:text="${row.aggregateType}">APPLICATION</td>
+                <td th:text="${row.aggregateKey}">APP-2026-0001</td>
+                <td th:text="${row.eventType}">SUBMITTED</td>
+                <td th:text="${row.actor}">alice.tan</td>
+                <td th:text="${row.fromState == null ? '-' : row.fromState + ' to ' + row.toState}">-</td>
+                <td th:text="${row.reason}">Reason</td>
+            </tr>
+            </tbody>
+        </table>
+        <p class="muted small"><a th:href="@{/admin/operations}">Search the full audit trail</a></p>
+    </div>
+</main>
+<footer class="site" th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

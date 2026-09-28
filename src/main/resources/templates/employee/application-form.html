@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments/layout :: head(${applicationId == null ? 'New application' : 'Update application'})}"></head>
+<body>
+<div th:replace="~{fragments/layout :: topbar('applications')}"></div>
+<main class="container">
+    <div th:replace="~{fragments/layout :: flash}"></div>
+
+    <h1 th:text="${applicationId == null ? 'Submit a training application' : 'Update application ' + application.referenceNo}">
+        Submit a training application
+    </h1>
+    <p class="card-note">
+        Saving an application sends it to your approving manager. While it is Applied or Updated you may still change
+        it; once it is approved the decision is final and only cancellation is possible.
+    </p>
+
+    <div class="grid two">
+        <div class="card">
+            <h2>Course details</h2>
+            <form th:action="${applicationId == null} ? @{/employee/applications} : @{'/employee/applications/' + ${applicationId} + '/update'}"
+                  th:object="${form}" method="post" id="application-form">
+
+                <input type="hidden" th:field="*{clientRequestId}"/>
+                <input type="hidden" th:field="*{version}"/>
+
+                <div class="field">
+                    <label for="catalogueId">Catalogue course (optional)</label>
+                    <select id="catalogueId" th:field="*{catalogueId}">
+                        <option value="">-- Not from the catalogue --</option>
+                        <option th:each="course : ${courses}" th:value="${course.id}"
+                                th:text="${course.title} + ' (' + ${course.category.displayName} + ')'"
+                                th:attr="data-fee=${course.defaultFee},data-category=${course.category.code},data-provider=${course.providerName}">Course</option>
+                    </select>
+                    <p class="help">
+                        Choosing a catalogue entry fills the category, provider and fee. You may still override them
+                        before saving.
+                    </p>
+                    <p class="field-error" th:if="${#fields.hasErrors('catalogueId')}" th:errors="*{catalogueId}">error</p>
+                </div>
+
+                <div class="field-row">
+                    <div class="field">
+                        <label for="categoryCode">Category</label>
+                        <select id="categoryCode" th:field="*{categoryCode}">
+                            <option value="">-- Select --</option>
+                            <option th:each="category : ${categories}" th:value="${category}"
+                                    th:text="${category.displayName}">Internal</option>
+                        </select>
+                        <p class="help">Internal training is free and may be booked as a half day.</p>
+                        <p class="field-error" th:if="${#fields.hasErrors('categoryCode')}" th:errors="*{categoryCode}">error</p>
+                    </div>
+                    <div class="field">
+                        <label for="courseFee">Course fee (SGD)</label>
+                        <input type="number" id="courseFee" step="0.01" min="0" th:field="*{courseFee}"/>
+                        <p class="help">Enter 0.00 for in-house training.</p>
+                        <p class="field-error" th:if="${#fields.hasErrors('courseFee')}" th:errors="*{courseFee}">error</p>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="courseTitle">Course title</label>
+                    <input type="text" id="courseTitle" maxlength="150" th:field="*{courseTitle}"/>
+                    <p class="field-error" th:if="${#fields.hasErrors('courseTitle')}" th:errors="*{courseTitle}">error</p>
+                </div>
+
+                <div class="field">
+                    <label for="providerName">Provider</label>
+                    <input type="text" id="providerName" maxlength="120" th:field="*{providerName}"/>
+                    <p class="help">In-house courses use the provider "ISS / In-house".</p>
+                    <p class="field-error" th:if="${#fields.hasErrors('providerName')}" th:errors="*{providerName}">error</p>
+                </div>
+
+                <div class="field-row">
+                    <div class="field">
+                        <label for="startDate">Start date</label>
+                        <input type="date" id="startDate" th:field="*{startDate}"/>
+                        <p class="field-error" th:if="${#fields.hasErrors('startDate')}" th:errors="*{startDate}">error</p>
+                    </div>
+                    <div class="field">
+                        <label for="startSession">Start session</label>
+                        <select id="startSession" th:field="*{startSession}">
+                            <option th:each="session : ${sessions}" th:value="${session}" th:text="${session.label}">AM</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="field-row">
+                    <div class="field">
+                        <label for="endDate">End date</label>
+                        <input type="date" id="endDate" th:field="*{endDate}"/>
+                        <p class="field-error" th:if="${#fields.hasErrors('endDate')}" th:errors="*{endDate}">error</p>
+                    </div>
+                    <div class="field">
+                        <label for="endSession">End session</label>
+                        <select id="endSession" th:field="*{endSession}">
+                            <option th:each="session : ${sessions}" th:value="${session}" th:text="${session.label}">PM</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="field">
+                    <label for="justification">Justification</label>
+                    <textarea id="justification" rows="3" maxlength="1000" th:field="*{justification}"
+                              placeholder="Why this course supports your work"></textarea>
+                    <p class="field-error" th:if="${#fields.hasErrors('justification')}" th:errors="*{justification}">error</p>
+                </div>
+
+                <div class="field">
+                    <label for="workDissemination">How you will share what you learned</label>
+                    <textarea id="workDissemination" rows="3" maxlength="1000" th:field="*{workDissemination}"
+                              placeholder="Planned sharing session, notes or follow-up training"></textarea>
+                    <p class="field-error" th:if="${#fields.hasErrors('workDissemination')}" th:errors="*{workDissemination}">error</p>
+                </div>
+
+                <div class="actions-bar">
+                    <button type="button" class="secondary" id="preview-button">Check rules (preview)</button>
+                    <button type="submit" th:text="${applicationId == null ? 'Submit application' : 'Save and resubmit'}">Submit</button>
+                    <a class="button secondary" th:href="@{/employee/applications}">Cancel</a>
+                </div>
+                <p class="help">
+                    "Check rules" runs exactly the same validation as the save, but writes nothing.
+                </p>
+            </form>
+        </div>
+
+        <div class="card">
+            <h2>Pre-save check</h2>
+            <p class="card-note">
+                Working days are generated from the dates, the sessions, weekends and the public holidays already
+                recorded by the administrator.
+            </p>
+            <div id="preview-panel" class="preview-panel">
+                <p class="muted">Press "Check rules (preview)" to see the training days, the entitlement check and any
+                    clash before saving.</p>
+            </div>
+        </div>
+    </div>
+</main>
+<footer class="site" th:replace="~{fragments/layout :: footer}"></footer>
+<script th:src="@{/js/preview.js}"></script>
+</body>
+</html>

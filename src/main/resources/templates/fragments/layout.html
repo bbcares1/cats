@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="en">
+<head th:fragment="head(title)">
+    <meta charset="UTF-8"/>
+    <meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title th:text="${title} + ' | CATS'">CATS</title>
+    <link rel="stylesheet" th:href="@{/css/cats.css}"/>
+    <meta name="_csrf" th:content="${_csrf?.token}"/>
+    <meta name="_csrf_header" th:content="${_csrf?.headerName}"/>
+</head>
+<body>
+
+<!-- Top bar. Links are shown only to the roles that may open them, so the
+     navigation never offers a door the server would refuse. -->
+<div class="topbar" th:fragment="topbar(active)">
+    <div class="topbar-inner">
+        <a class="brand" th:href="@{/home}">CATS <span>Course Application Tracking</span></a>
+        <nav class="nav">
+            <a th:href="@{/employee/dashboard}" th:classappend="${active == 'dashboard'} ? 'active' : ''"
+               sec:authorize="hasAnyRole('EMPLOYEE','MANAGER','ADMIN')">My training</a>
+            <a th:href="@{/employee/applications}" th:classappend="${active == 'applications'} ? 'active' : ''"
+               sec:authorize="hasAnyRole('EMPLOYEE','MANAGER','ADMIN')">Applications</a>
+            <a th:href="@{/employee/claims}" th:classappend="${active == 'claims'} ? 'active' : ''"
+               sec:authorize="hasAnyRole('EMPLOYEE','MANAGER','ADMIN')">Fee claims</a>
+            <a th:href="@{/calendar}" th:classappend="${active == 'calendar'} ? 'active' : ''"
+               sec:authorize="hasAnyRole('EMPLOYEE','MANAGER','ADMIN')">Calendar</a>
+            <a th:href="@{/manager/approvals}" th:classappend="${active == 'approvals'} ? 'active' : ''"
+               sec:authorize="hasRole('MANAGER')">Approvals</a>
+            <a th:href="@{/manager/team/history}" th:classappend="${active == 'team'} ? 'active' : ''"
+               sec:authorize="hasRole('MANAGER')">Team history</a>
+            <a th:href="@{/manager/reports}" th:classappend="${active == 'reports'} ? 'active' : ''"
+               sec:authorize="hasRole('MANAGER')">Reports</a>
+            <a th:href="@{/admin}" th:classappend="${active == 'admin'} ? 'active' : ''"
+               sec:authorize="hasRole('ADMIN')">Administration</a>
+        </nav>
+        <div class="session">
+            <span sec:authorize="isAuthenticated()" th:text="${#authentication.name}">user</span>
+            <form th:action="@{/logout}" method="post" sec:authorize="hasAnyRole('EMPLOYEE','MANAGER','ADMIN')">
+                <button class="link-button" type="submit" style="color:#dbe6f7">Sign out</button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<!-- Flash bar: every redirect carries one sentence saying what changed. -->
+<div th:fragment="flash">
+    <div class="flash flash-success" th:if="${message}" th:text="${message}">Saved.</div>
+    <div class="flash flash-warning" th:if="${warning}" th:text="${warning}">Check this.</div>
+    <div class="flash flash-error" th:if="${flashError}" th:text="${flashError}">Failed.</div>
+    <div class="flash flash-info" th:if="${info}" th:text="${info}">Note.</div>
+</div>
+
+<div th:fragment="footer">
+    <span>CATS — Course Application Tracking System (teaching project).</span>
+    <span> Money values are Singapore dollars. Training day units: 2 units = 1 full day.</span>
+</div>
+
+<!-- Reusable status pill; the label is always text, colour is only secondary information. -->
+<span th:fragment="statusPill(label, cssClass)" class="status"
+      th:classappend="'status-' + ${cssClass}" th:text="${label}">Applied</span>
+
+<!-- One row of an application table, shared by employee, manager and admin lists. -->
+<tr th:fragment="applicationRow(row, detailUrl)">
+    <td>
+        <a th:href="${detailUrl}" th:text="${row.referenceNo()}">APP-2026-0001</a>
+        <div class="small muted" th:text="${row.courseTitle()}">Course</div>
+    </td>
+    <td th:text="${row.categoryLabel()}">External</td>
+    <td th:text="${row.periodLabel()}">1 Mar 2026 (AM)</td>
+    <td class="num" th:text="${row.units() / 2.0}">1.0</td>
+    <td class="money" th:text="'$' + ${#numbers.formatDecimal(row.fee(), 1, 2)}">$0.00</td>
+    <td><span th:replace="~{fragments/layout :: statusPill(${row.statusLabel()}, ${row.statusCss()})}">Applied</span></td>
+    <td th:text="${row.submittedLabel()}">1 Mar 2026, 09:00</td>
+</tr>
+
+</body>
+</html>

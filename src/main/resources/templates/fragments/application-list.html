@@ -1,0 +1,94 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments/layout :: head('My applications')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: topbar('applications')}"></div>
+<main class="container">
+    <div th:replace="~{fragments/layout :: flash}"></div>
+
+    <h1>My training applications</h1>
+    <p class="card-note">
+        Your own records only. Every application keeps its reference number, so a cancelled or deleted record can
+        still be traced in the audit trail.
+    </p>
+
+    <form class="filters" method="get" th:action="@{${listUrl}}">
+        <div>
+            <label for="year">Year</label>
+            <input type="number" id="year" name="year" th:value="${year}" min="2020" max="2100" style="width:110px"/>
+        </div>
+        <div>
+            <label for="status">Status</label>
+            <select id="status" name="status">
+                <option value="">All statuses</option>
+                <option th:each="option : ${statuses}" th:value="${option}" th:text="${option.displayName}"
+                        th:selected="${status != null and status == option}">Applied</option>
+            </select>
+        </div>
+        <div>
+            <label for="category">Category</label>
+            <select id="category" name="category">
+                <option value="">All categories</option>
+                <option th:each="option : ${categories}" th:value="${option}" th:text="${option.displayName}"
+                        th:selected="${category != null and category == option}">Internal</option>
+            </select>
+        </div>
+        <div>
+            <label for="query">Search reference or course</label>
+            <input type="search" id="query" name="query" th:value="${query}" placeholder="APP-2026"/>
+        </div>
+        <div>
+            <label for="size">Rows per page</label>
+            <select id="size" name="size">
+                <option th:each="option : ${sizes}" th:value="${option}" th:text="${option}"
+                        th:selected="${size == option}">20</option>
+            </select>
+        </div>
+        <div>
+            <button type="submit">Apply filters</button>
+        </div>
+        <div>
+            <a class="button secondary" th:href="@{${listUrl}}">Clear</a>
+        </div>
+        <div>
+            <a class="button" th:href="@{/employee/applications/new}">New application</a>
+        </div>
+    </form>
+
+    <div class="empty" th:if="${page.isEmpty()}">
+        No application matches these filters for <span th:text="${year}">2026</span>.
+    </div>
+
+    <table th:unless="${page.isEmpty()}">
+        <caption>
+            <span th:text="${page.totalElements}">0</span> record(s) found.
+            A record is shown even after it is cancelled or deleted, so history stays complete.
+        </caption>
+        <thead>
+        <tr>
+            <th>Reference / course</th>
+            <th>Category</th>
+            <th>Period</th>
+            <th class="num">Days</th>
+            <th class="money">Fee (SGD)</th>
+            <th>Status</th>
+            <th>Submitted</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="row : ${page.content}"
+            th:replace="~{fragments/layout :: applicationRow(${row}, '/employee/applications/' + ${row.id()})}"></tr>
+        </tbody>
+    </table>
+
+    <div class="pager" th:if="${page.totalPages > 1}">
+        <a th:if="${page.hasPrevious()}"
+           th:href="@{${listUrl}(page=${page.number - 1}, size=${size}, year=${year}, status=${status}, category=${category}, query=${query})}">Previous</a>
+        <span>Page <span th:text="${page.number + 1}">1</span> of <span th:text="${page.totalPages}">1</span></span>
+        <a th:if="${page.hasNext()}"
+           th:href="@{${listUrl}(page=${page.number + 1}, size=${size}, year=${year}, status=${status}, category=${category}, query=${query})}">Next</a>
+    </div>
+</main>
+<footer class="site" th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

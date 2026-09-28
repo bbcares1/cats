@@ -1,0 +1,116 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments/layout :: head('Team training history')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: topbar('history')}"></div>
+<main class="container">
+    <div th:replace="~{fragments/layout :: flash}"></div>
+
+    <h1>Team training history</h1>
+    <p class="card-note">Only your own team is visible here, and only for the year you select.</p>
+
+    <form class="filter-bar" method="get" th:action="@{/manager/team/history}">
+        <div class="field">
+            <label for="employeeId">Employee</label>
+            <select id="employeeId" name="employeeId">
+                <option value="">Choose an employee…</option>
+                <option th:each="member : ${team}" th:value="${member.id}"
+                        th:selected="${selectedEmployeeId != null and selectedEmployeeId == member.id}"
+                        th:text="${member.fullName + ' (' + member.department + ')'}">Alice Tan</option>
+            </select>
+        </div>
+        <div class="field">
+            <label for="year">Year</label>
+            <input type="number" id="year" name="year" min="2000" max="2100" th:value="${year}"/>
+        </div>
+        <div class="field">
+            <label for="category">Category</label>
+            <select id="category" name="category">
+                <option value="">All categories</option>
+                <option th:each="code : ${categories}" th:value="${code}" th:selected="${category != null and category == code}"
+                        th:text="${code.displayName}">External</option>
+            </select>
+        </div>
+        <div class="field">
+            <label for="status">Status</label>
+            <select id="status" name="status">
+                <option value="">All statuses</option>
+                <option th:each="code : ${statuses}" th:value="${code}" th:selected="${status != null and status == code}"
+                        th:text="${code.displayName}">Applied</option>
+            </select>
+        </div>
+        <button type="submit">Show history</button>
+    </form>
+
+    <div class="card" th:if="${selectedEmployeeId == null}">
+        <div class="empty">Choose a team member to see their applications for <span th:text="${year}">2026</span>.</div>
+        <table th:if="${!team.isEmpty()}">
+            <thead><tr><th>Employee</th><th>Department</th><th></th></tr></thead>
+            <tbody>
+            <tr th:each="member : ${team}">
+                <td th:text="${member.fullName}">Alice Tan</td>
+                <td th:text="${member.department}">Digital Services</td>
+                <td>
+                    <a class="button small secondary"
+                       th:href="@{/manager/team/history(employeeId=${member.id}, year=${year})}">Open history</a>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <section th:if="${selectedEmployeeId != null}">
+        <div class="card">
+            <h2 th:text="${selectedEmployee == null ? 'Employee' : selectedEmployee.fullName} + ' — ' + ${year}">Alice Tan — 2026</h2>
+            <table>
+                <thead>
+                <tr><th>Year</th><th class="num">Entitled</th><th class="num">Reserved</th><th class="num">Committed</th>
+                    <th class="num">Available</th><th class="money">Budget left (SGD)</th></tr>
+                </thead>
+                <tbody>
+                <tr th:each="entry : ${balances}">
+                    <td th:text="${entry.account.calendarYear}">2026</td>
+                    <td class="num" th:text="${entry.entitledUnits() / 2.0}">10.0</td>
+                    <td class="num" th:text="${entry.reservedUnits() / 2.0}">0.0</td>
+                    <td class="num" th:text="${entry.committedUnits() / 2.0}">0.0</td>
+                    <td class="num" th:text="${entry.availableUnits() / 2.0}">10.0</td>
+                    <td class="money" th:text="'$' + ${@fmt.money(entry.availableAmount())}">$0.00</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="card">
+            <h2>Applications</h2>
+            <div class="empty" th:if="${rows.isEmpty()}">No application matches these filters.</div>
+            <table th:unless="${rows.isEmpty()}">
+                <thead>
+                <tr>
+                    <th>Reference</th><th>Course</th><th>Category</th><th>Provider</th><th>Period</th>
+                    <th class="num">Days</th><th class="money">Fee (SGD)</th><th>Status</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="row : ${rows}">
+                    <td th:text="${row.referenceNo}">APP-2026-0001</td>
+                    <td th:text="${row.courseTitle}">Course</td>
+                    <td th:text="${row.categoryCode.displayName}">External</td>
+                    <td th:text="${row.providerName}">Provider</td>
+                    <td th:text="${@fmt.period(row)}">1 Mar 2026</td>
+                    <td class="num" th:text="${row.reservedUnits / 2.0}">1.0</td>
+                    <td class="money" th:text="'$' + ${@fmt.money(row.courseFee)}">$0.00</td>
+                    <td><span class="status" th:classappend="'status-' + ${row.status.cssClass}"
+                              th:text="${row.status.displayName}">Applied</span></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <div class="actions-bar">
+        <a class="button secondary" th:href="@{/manager/approvals}">Back to the queue</a>
+    </div>
+</main>
+<footer class="site" th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

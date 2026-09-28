@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments/layout :: head('Review ' + ${application.referenceNo})}"></head>
+<body>
+<div th:replace="~{fragments/layout :: topbar('approvals')}"></div>
+<main class="container">
+    <div th:replace="~{fragments/layout :: flash}"></div>
+
+    <h1>
+        <span th:text="${application.referenceNo}">APP-2026-0001</span>
+        <span class="status" th:classappend="'status-' + ${view.statusCss()}" th:text="${view.statusLabel()}">Applied</span>
+    </h1>
+    <p class="card-note">
+        <span th:text="${application.employee.fullName}">Alice Tan</span> —
+        <span th:text="${application.employee.department}">Digital Services</span> —
+        <span th:text="${application.courseTitle}">Course</span> —
+        <span th:text="${view.categoryLabel()}">External</span> —
+        <span th:text="${view.periodLabel()}">1 Mar 2026</span>
+    </p>
+
+    <p class="flash flash-warn" th:if="${isOwnApplication}">
+        This is your own application. You cannot decide it — ask another manager or an administrator to review it.
+    </p>
+
+    <div class="grid two">
+        <div class="card">
+            <h2>The request</h2>
+            <dl class="definition">
+                <dt>Provider</dt>
+                <dd th:text="${application.providerName}">Provider</dd>
+                <dt>Training days requested</dt>
+                <dd><span th:text="${view.units() / 2.0}">1.0</span> day(s), fee
+                    S$<span th:text="${@fmt.money(application.courseFee)}">0.00</span></dd>
+                <dt>Justification</dt>
+                <dd th:text="${application.justification}">Reason</dd>
+                <dt>How the learning will be shared</dt>
+                <dd th:text="${application.workDissemination}">Plan</dd>
+                <dt>Submitted</dt>
+                <dd th:text="${view.submittedLabel()}">1 Mar 2026</dd>
+            </dl>
+
+            <h3>Training days</h3>
+            <table>
+                <thead>
+                <tr><th>Date</th><th>Day</th><th>Session</th><th class="num">Days</th></tr>
+                </thead>
+                <tbody>
+                <tr th:each="day : ${application.days}">
+                    <td th:text="${@fmt.date(day.trainingDate)}">1 Mar 2026</td>
+                    <td th:text="${day.trainingDate.dayOfWeek}">MONDAY</td>
+                    <td th:text="${day.sessionCode.label}">AM</td>
+                    <td class="num" th:text="${day.units / 2.0}">0.5</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="card">
+            <h2>Entitlement and budget</h2>
+            <div class="empty" th:if="${balance == null}">
+                No entitlement has been configured for <span th:text="${balanceYear}">2026</span>. The request
+                therefore fails the entitlement check.
+            </div>
+            <table th:if="${balance != null}">
+                <thead>
+                <tr>
+                    <th>Year</th>
+                    <th class="num">Entitled</th>
+                    <th class="num">Reserved</th>
+                    <th class="num">Committed</th>
+                    <th class="num">Available</th>
+                    <th class="money">Budget left (SGD)</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr>
+                    <td th:text="${balanceYear}">2026</td>
+                    <td class="num" th:text="${balance.entitledUnits / 2.0}">10.0</td>
+                    <td class="num" th:text="${balance.reservedUnits / 2.0}">0.0</td>
+                    <td class="num" th:text="${balance.committedUnits / 2.0}">0.0</td>
+                    <td class="num" th:text="${balance.availableUnits / 2.0}">10.0</td>
+                    <td class="money" th:text="'$' + ${@fmt.money(balance.availableAmount)}">$0.00</td>
+                </tr>
+                </tbody>
+            </table>
+            <p class="muted small">
+                Approving commits this request permanently: the days move from reserved to committed and the fee is
+                committed against the budget. A rejection releases them.
+            </p>
+
+            <h3>All years for this employee</h3>
+            <table>
+                <thead>
+                <tr><th>Year</th><th class="num">Entitled</th><th class="num">Available</th><th class="money">Budget left</th></tr>
+                </thead>
+                <tbody>
+                <tr th:each="entry : ${balances}">
+                    <td th:text="${entry.account.calendarYear}">2026</td>
+                    <td class="num" th:text="${entry.entitledUnits() / 2.0}">10.0</td>
+                    <td class="num" th:text="${entry.availableUnits() / 2.0}">10.0</td>
+                    <td class="money" th:text="'$' + ${@fmt.money(entry.availableAmount())}">$0.00</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Concurrent training of this employee</h2>
+        <p class="card-note">Overlapping requests make it physically impossible to attend both courses.</p>
+        <div class="empty" th:if="${concurrent.isEmpty()}">No other application of this employee overlaps these dates.</div>
+        <table th:unless="${concurrent.isEmpty()}">
+            <thead>
+            <tr><th>Reference</th><th>Course</th><th>Period</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+            <tr th:each="other : ${concurrent}">
+                <td th:text="${other.referenceNo}">APP-2026-0002</td>
+                <td th:text="${other.courseTitle}">Course</td>
+                <td th:text="${@fmt.period(other)}">1 Mar 2026</td>
+                <td>
+                    <span class="status" th:classappend="'status-' + ${other.status.cssClass}"
+                          th:text="${other.status.displayName}">Applied</span>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="grid two">
+        <div class="card" th:if="${view.decisionAllowed()}">
+            <h2>Decision</h2>
+            <p class="card-note">A reason is mandatory and is shown to the employee. Decisions are final.</p>
+            <form th:action="@{'/manager/applications/' + ${application.id} + '/decision'}"
+                  th:object="${decisionForm}" method="post"
+                  onsubmit="return confirm('Decisions are final. Record this decision?');">
+                <input type="hidden" th:field="*{version}"/>
+                <input type="hidden" th:field="*{decisionScope}" value="single"/>
+                <div class="field">
+                    <label for="reason">Decision reason</label>
+                    <textarea id="reason" th:field="*{reason}" rows="3" maxlength="500" required></textarea>
+                </div>
+                <div class="actions-bar">
+                    <button type="submit" name="approved" value="true">Approve</button>
+                    <button class="danger" type="submit" name="approved" value="false">Reject</button>
+                </div>
+            </form>
+        </div>
+        <div class="card" th:unless="${view.decisionAllowed()}">
+            <h2>Decision</h2>
+            <p class="muted">
+                This application can no longer be decided: it is
+                <span th:text="${view.statusLabel()}">Approved</span>.
+            </p>
+            <p class="muted small" th:if="${application.reviewComment != null}">
+                Recorded reason: <span th:text="${application.reviewComment}">Reason</span>
+            </p>
+        </div>
+
+        <div class="card">
+            <h2>Audit trail</h2>
+            <ol class="timeline">
+                <li th:each="event : ${timeline}">
+                    <div class="when" th:text="${@fmt.dateTime(event.createdAt)}">1 Mar 2026</div>
+                    <div class="what">
+                        <span th:text="${event.eventType}">SUBMITTED</span>
+                        <span class="muted"
+                              th:text="${event.fromState == null ? '' : event.fromState + ' to ' + event.toState}">Applied to Approved</span>
+                    </div>
+                    <div class="why" th:if="${event.reason != null}" th:text="${event.reason}">Reason</div>
+                    <div class="why" th:text="'Actor: ' + ${event.actorLabel}">Actor</div>
+                </li>
+            </ol>
+        </div>
+    </div>
+
+    <div class="actions-bar">
+        <a class="button secondary" th:href="@{/manager/approvals}">Back to the queue</a>
+        <a class="button secondary" th:href="@{/manager/team/history(employeeId=${application.employee.id})}">This employee's history</a>
+    </div>
+</main>
+<footer class="site" th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments/layout :: head('Training calendar')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: topbar('calendar')}"></div>
+<main class="container wide">
+    <div th:replace="~{fragments/layout :: flash}"></div>
+
+    <div class="page-head">
+        <h1>Training calendar</h1>
+        <p class="card-note">
+            Public holidays and weekends come from the database, so a course that spans a holiday is counted
+            correctly. The grid is refreshed from <code>/api/v1/calendar</code> when you change a filter.
+        </p>
+    </div>
+
+    <form class="filter-bar" id="calendar-filter" method="get" th:action="@{/calendar}">
+        <div class="field">
+            <label for="month">Month</label>
+            <select id="month" name="month">
+                <option th:each="candidate : ${months}" th:value="${candidate}"
+                        th:selected="${candidate == month}"
+                        th:text="${@fmt.monthLabel(candidate)}">
+                    March 2026</option>
+            </select>
+        </div>
+        <div class="field">
+            <label for="category">Category</label>
+            <select id="category" name="category">
+                <option value="">All categories</option>
+                <option th:each="code : ${categories}" th:value="${code}"
+                        th:selected="${category != null and category == code}"
+                        th:text="${code.displayName}">External</option>
+            </select>
+        </div>
+        <div class="field checkbox">
+            <input type="checkbox" id="team" name="team" value="true" th:checked="${teamView}"/>
+            <label for="team">Include my team's training</label>
+        </div>
+        <button type="submit">Show month</button>
+    </form>
+
+    <div class="card calendar-card">
+        <h2 id="calendar-title">
+            <span th:text="${view.label}">March 2026</span>
+            <span class="muted small" th:text="${teamView ? 'including your team' : 'your training only'}">your training only</span>
+        </h2>
+
+        <div class="calendar" id="calendar">
+            <div class="cal-head">
+                <div>Mon</div><div>Tue</div><div>Wed</div><div>Thu</div><div>Fri</div><div>Sat</div><div>Sun</div>
+            </div>
+            <div class="cal-week" th:each="week : ${view.weeks}">
+                <div th:each="day : ${week.days}" th:class="${day.cssClass}"
+                     th:attr="data-date=${day.date}">
+                    <div class="cal-day-head">
+                        <span class="cal-day-number" th:text="${day.dayOfMonth}">1</span>
+                        <span class="cal-today" th:if="${day.todayLabel != null}" th:text="${day.todayLabel}">Today</span>
+                    </div>
+                    <div class="cal-holiday" th:if="${day.holidayName != null}" th:text="${day.holidayName}">Holiday</div>
+                    <ul class="cal-items">
+                        <li th:each="item : ${day.items}"
+                            th:classappend="${item.own ? 'cal-own' : 'cal-team'}">
+                            <a th:href="${item.own ? '/employee/applications/' + item.applicationId : '#'}"
+                               th:text="${item.courseTitle}">Course</a>
+                            <span class="cal-owner" th:if="${!item.own}" th:text="${item.employeeName}">Alice Tan</span>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div class="legend">
+            <span class="legend-item"><span class="dot cal-own-dot"></span>Your training</span>
+            <span class="legend-item"><span class="dot cal-team-dot"></span>Team member training</span>
+            <span class="legend-item"><span class="dot cal-holiday-dot"></span>Public holiday</span>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Training days in <span th:text="${view.label}">March 2026</span></h2>
+        <div class="empty" th:if="${flatItems.isEmpty()}">No training is scheduled in this month.</div>
+        <table th:unless="${flatItems.isEmpty()}">
+            <thead>
+            <tr><th>Date</th><th>Day</th><th>Course</th><th>Employee</th><th>Category</th><th>Period</th><th>Status</th></tr>
+            </thead>
+            <tbody>
+            <tr th:each="day : ${flatItems}">
+                <td th:text="${@fmt.date(day.date)}">1 Mar 2026</td>
+                <td th:text="${day.weekdayLabel}">Mon</td>
+                <td>
+                    <ul class="plain">
+                        <li th:each="item : ${day.items}" th:text="${item.courseTitle}">Course</li>
+                    </ul>
+                </td>
+                <td>
+                    <ul class="plain">
+                        <li th:each="item : ${day.items}" th:text="${item.employeeName}">Alice Tan</li>
+                    </ul>
+                </td>
+                <td>
+                    <ul class="plain">
+                        <li th:each="item : ${day.items}" th:text="${item.categoryLabel}">External</li>
+                    </ul>
+                </td>
+                <td>
+                    <ul class="plain">
+                        <li th:each="item : ${day.items}" th:text="${item.periodLabel}">1 Mar 2026</li>
+                    </ul>
+                </td>
+                <td>
+                    <ul class="plain">
+                        <li th:each="item : ${day.items}">
+                            <span class="status" th:classappend="'status-' + ${item.statusCss}"
+                                  th:text="${item.statusLabel}">Applied</span>
+                        </li>
+                    </ul>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</main>
+<footer class="site" th:replace="~{fragments/layout :: footer}"></footer>
+<script th:src="@{/js/calendar.js}" defer></script>
+</body>
+</html>

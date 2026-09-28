@@ -1,0 +1,29 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" xmlns:sec="http://www.thymeleaf.org/extras/spring-security" lang="en">
+<head th:replace="~{fragments/layout :: head(${title})}"></head>
+<body>
+<div th:replace="~{fragments/layout :: topbar('')}"></div>
+<main class="container">
+    <div class="error-page">
+        <h1 th:text="${title}">Request could not be completed</h1>
+        <p class="flash flash-error" th:text="${message}">Explanation of the rule that stopped the action.</p>
+        <dl class="definition">
+            <dt>Error code</dt>
+            <dd><span class="badge" th:text="${code}">INVALID_STATE</span></dd>
+            <dt>HTTP status</dt>
+            <dd th:text="${status}">409</dd>
+            <dt>Page</dt>
+            <dd th:text="${path}">/employee/applications</dd>
+        </dl>
+        <p class="card-note">
+            Nothing was changed while checking this request: no training day, dollar amount or status was written.
+        </p>
+        <div class="actions-bar">
+            <a class="button" th:href="@{/home}">Back to my home page</a>
+            <a class="button secondary" th:href="@{/employee/dashboard}">My training</a>
+        </div>
+    </div>
+</main>
+<footer class="site" th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

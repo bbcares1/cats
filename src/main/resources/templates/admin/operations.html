@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments/layout :: head('Audit trail and email outbox')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: topbar('admin')}"></div>
+<main class="container wide">
+    <div th:replace="~{fragments/layout :: flash}"></div>
+
+    <h1>Audit trail and email outbox</h1>
+    <p class="card-note">
+        The audit trail is append-only: nothing in this application updates or deletes an audit row. Emails are
+        queued in the same transaction as the business change, so a message can never be sent for a change that was
+        rolled back.
+    </p>
+
+    <div class="card">
+        <h2>Search the audit trail</h2>
+        <form class="filter-bar" method="get" th:action="@{/admin/operations}">
+            <div class="field">
+                <label for="aggregateType">Aggregate</label>
+                <select id="aggregateType" name="aggregateType">
+                    <option value="">All aggregates</option>
+                    <option th:each="type : ${aggregateTypes}" th:value="${type}"
+                            th:selected="${aggregateType != null and aggregateType == type.name()}"
+                            th:text="${type}">APPLICATION</option>
+                </select>
+            </div>
+            <div class="field">
+                <label for="aggregateKey">Key contains</label>
+                <input type="text" id="aggregateKey" name="aggregateKey" th:value="${aggregateKey}"
+                       placeholder="APP-2026-0001"/>
+            </div>
+            <div class="field">
+                <label for="from">From</label>
+                <input type="date" id="from" name="from" th:value="${from}"/>
+            </div>
+            <div class="field">
+                <label for="to">To</label>
+                <input type="date" id="to" name="to" th:value="${to}"/>
+            </div>
+            <div class="field checkbox">
+                <input type="checkbox" id="failedOnly" name="failedOnly" value="true" th:checked="${failedOnly}"/>
+                <label for="failedOnly">Only failed emails</label>
+            </div>
+            <button type="submit">Search</button>
+        </form>
+
+        <div class="empty" th:if="${auditRows.isEmpty()}">No audit event matches this search.</div>
+        <table th:unless="${auditRows.isEmpty()}">
+            <thead>
+            <tr>
+                <th>When</th><th>Aggregate</th><th>Key</th><th>Event</th><th>Actor</th>
+                <th>From → To</th><th>Reason</th><th>Correlation</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="row : ${auditRows}">
+                <td th:text="${@fmt.dateTime(row.occurredAt)}">1 Mar 2026</td>
+                <td th:text="${row.aggregateType}">APPLICATION</td>
+                <td th:text="${row.aggregateKey}">APP-2026-0001</td>
+                <td th:text="${row.eventType}">SUBMITTED</td>
+                <td th:text="${row.actor}">alice.tan</td>
+                <td th:text="${row.fromState == null ? '-' : row.fromState + ' to ' + row.toState}">-</td>
+                <td th:text="${row.reason}">Reason</td>
+                <td class="small" th:text="${row.correlationId}">uuid</td>
+            </tr>
+            </tbody>
+        </table>
+
+        <nav class="pager" th:if="${page.totalPages > 1}">
+            <a th:if="${page.hasPrevious()}"
+               th:href="@{/admin/operations(page=${page.number - 1}, aggregateType=${aggregateType}, aggregateKey=${aggregateKey}, from=${from}, to=${to}, failedOnly=${failedOnly})}">Previous</a>
+            <span th:text="'Page ' + ${page.number + 1} + ' of ' + ${page.totalPages} + ' — ' + ${page.totalElements} + ' event(s)'">Page 1 of 1</span>
+            <a th:if="${page.hasNext()}"
+               th:href="@{/admin/operations(page=${page.number + 1}, aggregateType=${aggregateType}, aggregateKey=${aggregateKey}, from=${from}, to=${to}, failedOnly=${failedOnly})}">Next</a>
+        </nav>
+    </div>
+
+    <div class="card">
+        <h2>Email outbox</h2>
+        <p class="card-note">
+            <span th:each="count : ${outboxCounts}" class="badge" th:text="${count}">PENDING: 0</span>
+        </p>
+        <div class="empty" th:if="${outboxRows.isEmpty()}">No email matches this filter.</div>
+        <table th:unless="${outboxRows.isEmpty()}">
+            <thead>
+            <tr>
+                <th>#</th><th>Recipient</th><th>Template</th><th>Status</th><th class="num">Attempts</th>
+                <th>Next attempt</th><th>Sent</th><th>Last error</th><th></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="row : ${outboxRows}">
+                <td th:text="${row.id}">1</td>
+                <td th:text="${row.recipientEmail}">a@nus.edu.sg</td>
+                <td th:text="${row.template}">APPLICATION_SUBMITTED</td>
+                <td><span class="status" th:classappend="'status-' + ${row.status.name() == 'FAILED' ? 'rejected' : (row.status.name() == 'SENT' ? 'approved' : 'pending')}"
+                          th:text="${row.status}">PENDING</span></td>
+                <td class="num" th:text="${row.attempts}">3</td>
+                <td th:text="${@fmt.dateTime(row.nextAttemptAt)}">1 Mar 2026</td>
+                <td th:text="${@fmt.dateTime(row.sentAt)}">1 Mar 2026</td>
+                <td class="small" th:text="${row.lastError}">error</td>
+                <td>
+                    <form th:if="${row.retryable}" th:action="@{'/admin/outbox/' + ${row.id} + '/retry'}" method="post">
+                        <button class="small" type="submit">Retry</button>
+                    </form>
+                    <span class="muted small" th:unless="${row.retryable}">—</span>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+        <p class="muted small">
+            A failed message is retried with a lease, so two workers can never send the same email twice.
+        </p>
+    </div>
+
+    <div class="actions-bar">
+        <a class="button secondary" th:href="@{/admin}">Back to administration</a>
+    </div>
+</main>
+<footer class="site" th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

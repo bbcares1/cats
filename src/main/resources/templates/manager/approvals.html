@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments/layout :: head('Approval queue')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: topbar('approvals')}"></div>
+<main class="container">
+    <div th:replace="~{fragments/layout :: flash}"></div>
+
+    <h1>Approval queue</h1>
+    <p class="card-note">
+        Applications are grouped by employee so you can judge a person's total plan against their remaining
+        entitlement. Days shown are <em>reserved</em> until you approve them.
+    </p>
+
+    <nav class="tabs">
+        <a th:href="@{/manager/approvals(tab='applications')}"
+           th:classappend="${tab == 'applications' ? 'active' : ''}">Applications</a>
+        <a th:href="@{/manager/approvals(tab='claims')}"
+           th:classappend="${tab == 'claims' ? 'active' : ''}">
+            Fee claims <span class="count" th:text="${pendingClaimCount}">0</span>
+        </a>
+        <a th:href="@{/manager/approvals(tab='team')}"
+           th:classappend="${tab == 'team' ? 'active' : ''}">Team entitlement (current year)</a>
+    </nav>
+
+    <section th:if="${tab == 'applications'}">
+        <div class="empty" th:if="${groups.isEmpty()}">Nothing is waiting for your decision. Well done.</div>
+
+        <div class="card" th:each="group : ${groups}">
+            <h2>
+                <span th:text="${group.employeeName}">Alice Tan</span>
+                <span class="muted small" th:text="${group.department}">Digital Services</span>
+                <span class="badge" th:text="${group.pendingCount} + ' waiting'">1 waiting</span>
+            </h2>
+            <p class="flash flash-warn" th:if="${group.selfApplication}" th:text="${group.selfApplicationNotice}">
+                Notice
+            </p>
+            <table>
+                <thead>
+                <tr>
+                    <th>Reference</th>
+                    <th>Course</th>
+                    <th>Category</th>
+                    <th>Period</th>
+                    <th class="num">Days</th>
+                    <th class="money">Fee (SGD)</th>
+                    <th>Status</th>
+                    <th>Submitted</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="row : ${group.rows}">
+                    <td th:text="${row.referenceNo}">APP-2026-0001</td>
+                    <td th:text="${row.courseTitle}">Course</td>
+                    <td th:text="${row.categoryLabel}">External</td>
+                    <td th:text="${row.periodLabel}">1 Mar 2026</td>
+                    <td class="num" th:text="${row.units / 2.0}">1.0</td>
+                    <td class="money" th:text="'$' + ${@fmt.money(row.fee)}">$0.00</td>
+                    <td><span class="status" th:classappend="'status-' + ${row.statusCss}" th:text="${row.statusLabel}">Applied</span></td>
+                    <td th:text="${row.submittedLabel}">1 Mar 2026</td>
+                    <td>
+                        <a class="button small" th:href="@{'/manager/applications/' + ${row.id}}">Review</a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <nav class="pager" th:if="${groups.totalPages > 1}">
+            <a th:if="${groups.hasPrevious()}"
+               th:href="@{/manager/approvals(tab='applications', page=${groups.number - 1}, size=${groups.size})}">Previous</a>
+            <span th:text="'Page ' + ${groups.number + 1} + ' of ' + ${groups.totalPages}">Page 1 of 1</span>
+            <a th:if="${groups.hasNext()}"
+               th:href="@{/manager/approvals(tab='applications', page=${groups.number + 1}, size=${groups.size})}">Next</a>
+        </nav>
+    </section>
+
+    <section th:if="${tab == 'claims'}">
+        <div class="empty" th:if="${pendingClaims.isEmpty()}">No fee claim is waiting for you.</div>
+        <div class="card" th:unless="${pendingClaims.isEmpty()}">
+            <h2>Fee claims awaiting your decision</h2>
+            <table>
+                <thead>
+                <tr>
+                    <th>Employee</th>
+                    <th>Course</th>
+                    <th>Period</th>
+                    <th class="money">Claimed (SGD)</th>
+                    <th>Revision</th>
+                    <th>Submitted</th>
+                    <th>Evidence</th>
+                    <th>Decision</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="claim : ${pendingClaims}">
+                    <td th:text="${claim.application.employee.fullName}">Alice Tan</td>
+                    <td th:text="${claim.application.courseTitle}">Course</td>
+                    <td th:text="${@fmt.period(claim.application)}">1 Mar 2026</td>
+                    <td class="money" th:text="'$' + ${@fmt.money(claim.amount)}">$0.00</td>
+                    <td th:text="${claim.revision}">1</td>
+                    <td th:text="${@fmt.dateTime(claim.submittedAt)}">1 Mar 2026</td>
+                    <td>
+                        <ul class="plain" th:if="${!claim.documentsForCurrentRevision.isEmpty()}">
+                            <li th:each="document : ${claim.documentsForCurrentRevision}">
+                                <a th:href="@{'/claims/documents/' + ${document.id}}"
+                                   th:text="${document.documentType.displayName}">Receipt</a>
+                            </li>
+                        </ul>
+                        <span class="muted small" th:if="${claim.documentsForCurrentRevision.isEmpty()}">No attachment</span>
+                    </td>
+                    <td>
+                        <form th:action="@{'/manager/claims/' + ${claim.id} + '/decision'}" method="post" class="inline">
+                            <input type="hidden" name="version" th:value="${claim.version}"/>
+                            <input type="text" name="reason" placeholder="Comment" maxlength="500" required/>
+                            <button class="small" name="approved" value="true" type="submit">Approve</button>
+                            <button class="danger small" name="approved" value="false" type="submit">Reject</button>
+                        </form>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section th:if="${tab == 'team'}">
+        <div class="card">
+            <h2>Team entitlement at a glance</h2>
+            <div class="empty" th:if="${teamSummary.isEmpty()}">
+                Nobody reports to you yet. Ask an administrator to set the reporting line.
+            </div>
+            <table th:unless="${teamSummary.isEmpty()}">
+                <thead>
+                <tr>
+                    <th>Employee</th>
+                    <th>Department</th>
+                    <th class="num">Entitled</th>
+                    <th class="num">Reserved</th>
+                    <th class="num">Committed</th>
+                    <th class="num">Available</th>
+                    <th class="money">Budget left (SGD)</th>
+                    <th></th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="member : ${teamSummary}">
+                    <td th:text="${member.fullName}">Alice Tan</td>
+                    <td th:text="${member.department}">Digital Services</td>
+                    <td class="num" th:text="${member.balance == null ? '-' : member.balance.entitledUnits / 2.0}">10.0</td>
+                    <td class="num" th:text="${member.balance == null ? '-' : member.balance.reservedUnits / 2.0}">0.0</td>
+                    <td class="num" th:text="${member.balance == null ? '-' : member.balance.committedUnits / 2.0}">0.0</td>
+                    <td class="num" th:text="${member.balance == null ? '-' : member.balance.availableUnits / 2.0}">0.0</td>
+                    <td class="money" th:text="${member.balance == null ? '-' : '$' + @fmt.money(member.balance.availableAmount)}">$0.00</td>
+                    <td>
+                        <a class="button small secondary"
+                           th:href="@{/manager/team/history(employeeId=${member.employeeId})}">History</a>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+</main>
+<footer class="site" th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

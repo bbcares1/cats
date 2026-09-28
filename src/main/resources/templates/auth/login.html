@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments/layout :: head('Sign in')}"></head>
+<body>
+<div class="auth-wrap">
+    <div class="auth-card">
+        <h1>CATS staff sign in</h1>
+        <p class="subtitle">Course Application Tracking System — staff, managers and administrators.</p>
+
+        <div class="flash flash-error" th:if="${param.error}">
+            The username or password is not correct. Try again, or ask an administrator to reset it.
+        </div>
+        <div class="flash flash-success" th:if="${param.loggedOut}">
+            You have signed out.
+        </div>
+
+        <form th:action="@{/login}" method="post">
+            <div class="field">
+                <label for="username">Username or staff number</label>
+                <input type="text" id="username" name="username" autocomplete="username" autofocus required/>
+            </div>
+            <div class="field">
+                <label for="password">Password</label>
+                <input type="password" id="password" name="password" autocomplete="current-password" required/>
+            </div>
+            <button type="submit">Sign in</button>
+        </form>
+
+        <div class="alt">
+            Administrator? <a th:href="@{/admin/login}">Use the administration sign in</a>
+        </div>
+        <div class="demo-accounts">
+            <strong>Demonstration accounts</strong><br/>
+            Employee: <code>alice.tan</code> / <code>Password123!</code><br/>
+            Manager: <code>maria.lim</code> / <code>Password123!</code><br/>
+            Administrator: <code>admin</code> / <code>Password123!</code>
+        </div>
+    </div>
+</div>
+</body>
+</html>

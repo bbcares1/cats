@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments/layout :: head('Staff accounts')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: topbar('admin')}"></div>
+<main class="container wide">
+    <div th:replace="~{fragments/layout :: flash}"></div>
+
+    <div class="page-head">
+        <h1>Staff accounts</h1>
+        <a class="button" th:href="@{/admin/staff/new}">Add staff member</a>
+    </div>
+    <p class="card-note">
+        Staff records are archived rather than deleted, so historical applications keep a valid owner.
+    </p>
+
+    <form class="filter-bar" method="get" th:action="@{/admin/staff}">
+        <div class="field">
+            <label for="query">Search</label>
+            <input type="text" id="query" name="query" th:value="${query}" placeholder="Name, staff number or email"/>
+        </div>
+        <div class="field">
+            <label for="size">Page size</label>
+            <select id="size" name="size">
+                <option th:each="option : ${sizes}" th:value="${option}" th:selected="${option == size}"
+                        th:text="${option}">20</option>
+            </select>
+        </div>
+        <div class="field checkbox">
+            <input type="checkbox" id="activeOnly" name="activeOnly" value="true" th:checked="${activeOnly}"/>
+            <label for="activeOnly">Active staff only</label>
+        </div>
+        <button type="submit">Search</button>
+    </form>
+
+    <div class="card">
+        <div class="empty" th:if="${rows.isEmpty()}">No staff record matches this search.</div>
+        <table th:unless="${rows.isEmpty()}">
+            <thead>
+            <tr>
+                <th>Staff no.</th><th>Name</th><th>Email</th><th>Department</th><th>Designation</th>
+                <th>Username</th><th>Roles</th><th>Reporting to</th><th>Status</th><th></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="row : ${rows}">
+                <td th:text="${row.staffNo}">S1001</td>
+                <td th:text="${row.fullName}">Alice Tan</td>
+                <td th:text="${row.email}">a@nus.edu.sg</td>
+                <td th:text="${row.department}">Digital Services</td>
+                <td th:text="${row.designationCode}">EXEC</td>
+                <td th:text="${row.username}">alice.tan</td>
+                <td>
+                    <span class="badge" th:each="role : ${row.roles}" th:text="${role}">EMPLOYEE</span>
+                </td>
+                <td th:text="${row.managerName == null ? '—' : row.managerName}">Maria Lim</td>
+                <td>
+                    <span class="status" th:classappend="'status-' + ${row.accountEnabled ? 'approved' : 'rejected'}"
+                          th:text="${row.accountEnabled ? 'Active' : 'Disabled'}">Active</span>
+                    <span class="muted small" th:if="${!row.active}">(record archived)</span>
+                </td>
+                <td class="nowrap">
+                    <a class="button small secondary" th:href="@{'/admin/staff/' + ${row.id} + '/edit'}">Edit</a>
+                    <form class="inline" th:if="${row.accountEnabled}"
+                          th:action="@{'/admin/staff/' + ${row.id} + '/archive'}" method="post"
+                          th:onsubmit="'return confirm(\'Disable the login of ' + ${row.fullName} + '?\');'">
+                        <button class="danger small" type="submit">Disable login</button>
+                    </form>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+
+        <nav class="pager" th:if="${page.totalPages > 1}">
+            <a th:if="${page.hasPrevious()}"
+               th:href="@{/admin/staff(page=${page.number - 1}, query=${query}, activeOnly=${activeOnly}, size=${size})}">Previous</a>
+            <span th:text="'Page ' + ${page.number + 1} + ' of ' + ${page.totalPages} + ' — ' + ${page.totalElements} + ' record(s)'">Page 1 of 1</span>
+            <a th:if="${page.hasNext()}"
+               th:href="@{/admin/staff(page=${page.number + 1}, query=${query}, activeOnly=${activeOnly}, size=${size})}">Next</a>
+        </nav>
+    </div>
+
+    <div class="actions-bar">
+        <a class="button secondary" th:href="@{/admin}">Back to administration</a>
+        <a class="button secondary" th:href="@{/admin/approvals}">Reporting lines</a>
+    </div>
+</main>
+<footer class="site" th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments/layout :: head('Annual entitlements')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: topbar('admin')}"></div>
+<main class="container wide">
+    <div th:replace="~{fragments/layout :: flash}"></div>
+
+    <h1>Annual entitlements</h1>
+    <p class="card-note">
+        Every employee needs one row per year. Without it the employee cannot submit any application, because the
+        entitlement check can never pass. "Available" is what is left after reserved and committed usage.
+    </p>
+
+    <form class="filter-bar" method="get" th:action="@{/admin/entitlements}">
+        <div class="field">
+            <label for="year">Year</label>
+            <select id="year" name="year">
+                <option th:each="option : ${years}" th:value="${option}" th:selected="${option == year}"
+                        th:text="${option}">2026</option>
+            </select>
+        </div>
+        <button type="submit">Show year</button>
+    </form>
+
+    <div class="stat-grid">
+        <span class="stat">
+            <span class="stat-value" th:text="${configuredCount}">0</span>
+            <span class="stat-label">Employees with an entitlement in <span th:text="${year}">2026</span></span>
+        </span>
+        <span class="stat">
+            <span class="stat-value" th:text="${missingCount}">0</span>
+            <span class="stat-label">Active employees without one</span>
+        </span>
+    </div>
+
+    <div class="grid two">
+        <div class="card">
+            <h2>Set or change an entitlement</h2>
+            <form th:action="@{/admin/entitlements}" th:object="${form}" method="post">
+                <div class="field">
+                    <label for="employeeId">Employee</label>
+                    <select id="employeeId" name="employeeId" th:field="*{employeeId}" required>
+                        <option value="">Choose an employee…</option>
+                        <option th:each="employee : ${employees}" th:value="${employee.id}"
+                                th:text="${employee.fullName + ' (' + employee.staffNo + ')'}">Alice Tan</option>
+                    </select>
+                    <p class="help">Choose the employee, then press "Set entitlement".</p>
+                </div>
+                <div class="field">
+                    <label for="calendarYear">Calendar year</label>
+                    <input type="number" id="calendarYear" th:field="*{calendarYear}" min="2000" max="2100" required/>
+                </div>
+                <div class="field">
+                    <label for="entitledUnits">Entitled training days</label>
+                    <input type="number" step="0.5" min="0" id="entitledUnits" th:field="*{entitledUnits}" required/>
+                    <p class="help">Decimal days are allowed; half a day is the smallest unit.</p>
+                </div>
+                <div class="field">
+                    <label for="budgetAmount">Annual budget (SGD)</label>
+                    <input type="number" step="0.01" min="0" id="budgetAmount" th:field="*{budgetAmount}" required/>
+                </div>
+                <input type="hidden" th:field="*{version}"/>
+                <button type="submit">Set entitlement</button>
+            </form>
+            <p class="muted small">
+                A save is rejected if it would leave an employee with less entitlement than they have already
+                committed. Reduce usage first, for example by cancelling an application.
+            </p>
+        </div>
+
+        <div class="card">
+            <h2>Entitlements in <span th:text="${year}">2026</span></h2>
+            <div class="empty" th:if="${rows.isEmpty()}">No entitlement is configured for this year yet.</div>
+            <table th:unless="${rows.isEmpty()}">
+                <thead>
+                <tr>
+                    <th>Employee</th><th>Department</th>
+                    <th class="num">Entitled</th><th class="num">Reserved</th><th class="num">Committed</th>
+                    <th class="num">Available</th>
+                    <th class="money">Budget (SGD)</th><th class="money">Left (SGD)</th><th>Usage</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="row : ${rows}">
+                    <td th:text="${row.account.employee.fullName}">Alice Tan</td>
+                    <td th:text="${row.account.employee.department}">Digital Services</td>
+                    <td class="num" th:text="${row.balance.entitledUnits() / 2.0}">10.0</td>
+                    <td class="num" th:text="${row.balance.reservedUnits() / 2.0}">0.0</td>
+                    <td class="num" th:text="${row.balance.committedUnits() / 2.0}">0.0</td>
+                    <td class="num" th:text="${row.balance.availableUnits() / 2.0}">10.0</td>
+                    <td class="money" th:text="'$' + ${@fmt.money(row.balance.budgetAmount())}">$0.00</td>
+                    <td class="money" th:text="'$' + ${@fmt.money(row.balance.availableAmount())}">$0.00</td>
+                    <td th:text="${row.balance.getAvailableDaysLabel()}">0.0 / 10.0</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="actions-bar">
+        <a class="button secondary" th:href="@{/admin}">Back to administration</a>
+    </div>
+</main>
+<footer class="site" th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

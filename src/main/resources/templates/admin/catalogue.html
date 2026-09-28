@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments/layout :: head('Course catalogue')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: topbar('admin')}"></div>
+<main class="container wide">
+    <div th:replace="~{fragments/layout :: flash}"></div>
+
+    <h1>Course catalogue</h1>
+    <p class="card-note">
+        Internal courses are always free of charge; external and certification courses must carry a fee and are the
+        only ones that can be reimbursed. Deactivating an entry hides it from new applications and never touches
+        existing records.
+    </p>
+
+    <nav class="tabs">
+        <a th:href="@{/admin/catalogue(tab='courses')}" th:classappend="${tab != 'providers' and tab != 'holidays' ? 'active' : ''}">Courses</a>
+        <a th:href="@{/admin/catalogue(tab='providers')}" th:classappend="${tab == 'providers' ? 'active' : ''}">Providers</a>
+        <a th:href="@{/admin/catalogue(tab='holidays')}" th:classappend="${tab == 'holidays' ? 'active' : ''}">Public holidays</a>
+    </nav>
+
+    <section th:if="${tab == 'providers'}">
+        <div class="grid two">
+            <div class="card">
+                <h2>Add a provider</h2>
+                <form th:action="@{/admin/catalogue/providers}" th:object="${providerForm}" method="post">
+                    <div class="field">
+                        <label for="providerName">Provider name</label>
+                        <input type="text" id="providerName" th:field="*{name}" maxlength="150" required/>
+                    </div>
+                    <div class="field checkbox">
+                        <input type="checkbox" id="providerActive" th:field="*{active}"/>
+                        <label for="providerActive">Active</label>
+                    </div>
+                    <button type="submit">Save provider</button>
+                </form>
+            </div>
+            <div class="card">
+                <h2>Providers</h2>
+                <div class="empty" th:if="${providers.isEmpty()}">No provider is configured yet.</div>
+                <table th:unless="${providers.isEmpty()}">
+                    <thead><tr><th>Name</th><th>Status</th><th></th></tr></thead>
+                    <tbody>
+                    <tr th:each="provider : ${providers}">
+                        <td th:text="${provider.name}">NUS-ISS</td>
+                        <td>
+                            <span class="status" th:classappend="'status-' + ${provider.active ? 'approved' : 'rejected'}"
+                                  th:text="${provider.active ? 'Active' : 'Inactive'}">Active</span>
+                        </td>
+                        <td>
+                            <form class="inline" th:action="@{'/admin/catalogue/providers/' + ${provider.id} + '/toggle'}" method="post">
+                                <input type="hidden" name="active" th:value="${!provider.active}"/>
+                                <button class="small secondary" type="submit"
+                                        th:text="${provider.active ? 'Deactivate' : 'Activate'}">Deactivate</button>
+                            </form>
+                        </td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <section th:if="${tab == 'holidays'}">
+        <div class="grid two">
+            <div class="card">
+                <h2>Add a public holiday</h2>
+                <form th:action="@{/admin/holidays}" th:object="${holidayForm}" method="post">
+                    <div class="field">
+                        <label for="holidayDate">Date</label>
+                        <input type="date" id="holidayDate" th:field="*{holidayDate}" required/>
+                    </div>
+                    <div class="field">
+                        <label for="holidayName">Name</label>
+                        <input type="text" id="holidayName" th:field="*{name}" maxlength="120" required/>
+                    </div>
+                    <div class="field">
+                        <label for="sourceNote">Source note</label>
+                        <input type="text" id="sourceNote" th:field="*{sourceNote}" maxlength="200"
+                               placeholder="Ministry of Manpower gazette"/>
+                    </div>
+                    <button type="submit">Save holiday</button>
+                </form>
+                <p class="muted small">
+                    Holidays are subtracted from training day counts during submission and preview.
+                </p>
+            </div>
+            <div class="card">
+                <h2>Holidays in <span th:text="${holidayYear}">2026</span></h2>
+                <div class="empty" th:if="${holidays.isEmpty()}">No public holiday recorded for this year.</div>
+                <table th:unless="${holidays.isEmpty()}">
+                    <thead><tr><th>Date</th><th>Name</th><th>Source</th></tr></thead>
+                    <tbody>
+                    <tr th:each="holiday : ${holidays}">
+                        <td th:text="${@fmt.date(holiday.holidayDate)}">1 Jan 2026</td>
+                        <td th:text="${holiday.name}">New Year</td>
+                        <td th:text="${holiday.sourceNote}">MOM</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+        <div class="card">
+            <h2>Employees whose pending requests touch these dates</h2>
+            <div class="empty" th:if="${affected.isEmpty()}">No pending application is affected.</div>
+            <ul class="plain">
+                <li th:each="entry : ${affected}" th:text="${entry}">Alice Tan (2)</li>
+            </ul>
+        </div>
+    </section>
+
+    <section th:if="${tab != 'providers' and tab != 'holidays'}">
+        <div class="grid two">
+            <div class="card">
+                <h2>Add a course</h2>
+                <form th:action="@{/admin/catalogue/courses}" th:object="${catalogueForm}" method="post">
+                    <div class="field">
+                        <label for="title">Course title</label>
+                        <input type="text" id="title" th:field="*{title}" maxlength="200" required/>
+                    </div>
+                    <div class="field">
+                        <label for="categoryCode">Category</label>
+                        <select id="categoryCode" th:field="*{categoryCode}" required>
+                            <option th:each="code : ${categoryCodes}" th:value="${code}"
+                                    th:text="${code.displayName}">External</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="providerId">Provider</label>
+                        <select id="providerId" th:field="*{providerId}">
+                            <option value="">None (internal training)</option>
+                            <option th:each="provider : ${providers}" th:value="${provider.id}"
+                                    th:text="${provider.name}">NUS-ISS</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="defaultFee">Default fee (SGD)</label>
+                        <input type="number" step="0.01" min="0" id="defaultFee" th:field="*{defaultFee}" required/>
+                        <p class="help">Must be 0.00 for an internal course and above zero otherwise.</p>
+                    </div>
+                    <div class="field">
+                        <label for="description">Description</label>
+                        <textarea id="description" th:field="*{description}" rows="3" maxlength="1000"></textarea>
+                    </div>
+                    <div class="field checkbox">
+                        <input type="checkbox" id="courseActive" th:field="*{active}"/>
+                        <label for="courseActive">Active</label>
+                    </div>
+                    <button type="submit">Save course</button>
+                </form>
+            </div>
+
+            <div class="card">
+                <h2>Course categories</h2>
+                <table>
+                    <thead><tr><th>Category</th><th>Fee</th><th>Half day</th><th>Reimbursable</th></tr></thead>
+                    <tbody>
+                    <tr th:each="code : ${categories}">
+                        <td th:text="${code.displayName}">External</td>
+                        <td th:text="${code.requiresFee() ? 'Required' : 'Always zero'}">Required</td>
+                        <td th:text="${code.allowsHalfDay() ? 'Allowed' : 'Full days only'}">Allowed</td>
+                        <td th:text="${code.isReimbursable() ? 'Yes' : 'No'}">Yes</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Courses</h2>
+            <form class="filter-bar" method="get" th:action="@{/admin/catalogue}">
+                <input type="hidden" name="tab" value="courses"/>
+                <div class="field">
+                    <label for="query">Search</label>
+                    <input type="text" id="query" name="query" th:value="${query}" placeholder="Course or provider"/>
+                </div>
+                <button type="submit">Search</button>
+            </form>
+            <div class="empty" th:if="${courses.isEmpty()}">No course matches this search.</div>
+            <table th:unless="${courses.isEmpty()}">
+                <thead>
+                <tr><th>Title</th><th>Category</th><th>Provider</th><th class="money">Default fee (SGD)</th><th>Status</th><th></th></tr>
+                </thead>
+                <tbody>
+                <tr th:each="course : ${courses}">
+                    <td th:text="${course.title}">Course</td>
+                    <td th:text="${course.category.code.displayName}">External</td>
+                    <td th:text="${course.provider == null ? '—' : course.provider.name}">NUS-ISS</td>
+                    <td class="money" th:text="'$' + ${@fmt.money(course.defaultFee)}">$0.00</td>
+                    <td>
+                        <span class="status" th:classappend="'status-' + ${course.active ? 'approved' : 'rejected'}"
+                              th:text="${course.active ? 'Active' : 'Inactive'}">Active</span>
+                    </td>
+                    <td>
+                        <form class="inline" th:action="@{'/admin/catalogue/courses/' + ${course.id} + '/toggle'}" method="post">
+                            <input type="hidden" name="active" th:value="${!course.active}"/>
+                            <button class="small secondary" type="submit"
+                                    th:text="${course.active ? 'Deactivate' : 'Activate'}">Deactivate</button>
+                        </form>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <div class="actions-bar">
+        <a class="button secondary" th:href="@{/admin}">Back to administration</a>
+    </div>
+</main>
+<footer class="site" th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

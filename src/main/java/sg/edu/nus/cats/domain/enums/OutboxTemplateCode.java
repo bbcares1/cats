@@ -1,0 +1,11 @@
+package sg.edu.nus.cats.domain.enums;
+
+public enum OutboxTemplateCode {
+    APPLICATION_SUBMITTED,
+    APPLICATION_APPROVED,
+    APPLICATION_REJECTED,
+    CLAIM_SUBMITTED,
+    CLAIM_APPROVED,
+    CLAIM_REJECTED,
+    REIMBURSEMENT_RECORDED
+}

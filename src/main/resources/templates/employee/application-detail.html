@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments/layout :: head('Application ' + ${application.referenceNo})}"></head>
+<body>
+<div th:replace="~{fragments/layout :: topbar('applications')}"></div>
+<main class="container">
+    <div th:replace="~{fragments/layout :: flash}"></div>
+
+    <h1>
+        <span th:text="${application.referenceNo}">APP-2026-0001</span>
+        <span class="status" th:classappend="'status-' + ${view.statusCss()}" th:text="${view.statusLabel()}">Applied</span>
+    </h1>
+    <p class="card-note">
+        <span th:text="${application.courseTitle}">Course</span> —
+        <span th:text="${view.categoryLabel()}">External</span> —
+        <span th:text="${view.periodLabel()}">1 Mar 2026 (AM)</span>
+    </p>
+
+    <div class="grid two">
+        <div class="card">
+            <h2>Application</h2>
+            <dl class="definition">
+                <dt>Course title</dt>
+                <dd th:text="${application.courseTitle}">Course</dd>
+                <dt>Category</dt>
+                <dd th:text="${application.categoryCode.displayName}">External Training</dd>
+                <dt>Provider</dt>
+                <dd th:text="${application.providerName}">Provider</dd>
+                <dt>Period</dt>
+                <dd th:text="${view.periodLabel()}">1 Mar 2026 (AM)</dd>
+                <dt>Training days</dt>
+                <dd>
+                    <span th:text="${application.reservedUnits / 2.0}">1.0</span> day unit(s)
+                    <span class="muted"
+                          th:text="'(' + ${application.days.size()} + ' generated training day record(s))'">(1)</span>
+                </dd>
+                <dt>Course fee</dt>
+                <dd th:text="'S$' + ${#numbers.formatDecimal(application.courseFee, 1, 2)}">S$0.00</dd>
+                <dt>Approving manager</dt>
+                <dd th:text="${application.approver == null ? '-' : application.approver.fullName}">Manager</dd>
+                <dt>Submitted</dt>
+                <dd th:text="${view.submittedLabel()}">1 Mar 2026, 09:00</dd>
+                <dt>Justification</dt>
+                <dd th:text="${application.justification}">Reason</dd>
+                <dt>Work dissemination</dt>
+                <dd th:text="${application.workDissemination}">Sharing plan</dd>
+                <dt th:if="${application.reviewComment != null}">Decision comment</dt>
+                <dd th:if="${application.reviewComment != null}" th:text="${application.reviewComment}">Comment</dd>
+                <dt th:if="${application.cancelReason != null}">Cancellation reason</dt>
+                <dd th:if="${application.cancelReason != null}" th:text="${application.cancelReason}">Reason</dd>
+                <dt th:if="${application.completionComment != null}">Completion notes</dt>
+                <dd th:if="${application.completionComment != null}" th:text="${application.completionComment}">Notes</dd>
+            </dl>
+
+            <div class="actions-bar" th:if="${!allowedActions.isEmpty()}">
+                <a class="button secondary" th:if="${allowedActions.contains('edit')}"
+                   th:href="@{'/employee/applications/' + ${application.id} + '/edit'}">Change this application</a>
+                <a class="button secondary" th:if="${allowedActions.contains('complete')}"
+                   th:href="@{'#complete-' + ${application.id}}">Mark as completed</a>
+                <a class="button secondary" th:if="${canClaim}"
+                   th:href="@{/employee/claims/new(applicationId=${application.id})}">Claim the fee</a>
+            </div>
+        </div>
+
+        <div class="card">
+            <h2>Entitlement effect</h2>
+            <p class="card-note">
+                Applied and Updated hold days as <em>reserved</em>; an approval moves them to <em>committed</em>.
+                Cancelling releases them again.
+            </p>
+            <table>
+                <thead>
+                <tr>
+                    <th>Year</th>
+                    <th class="num">Entitled</th>
+                    <th class="num">Reserved</th>
+                    <th class="num">Committed</th>
+                    <th class="num">Available</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="entry : ${balances}">
+                    <td th:text="${entry.account.calendarYear}">2026</td>
+                    <td class="num" th:text="${entry.entitledUnits() / 2.0}">10.0</td>
+                    <td class="num" th:text="${entry.reservedUnits() / 2.0}">1.0</td>
+                    <td class="num" th:text="${entry.committedUnits() / 2.0}">1.0</td>
+                    <td class="num" th:text="${entry.availableUnits() / 2.0}">8.0</td>
+                </tr>
+                </tbody>
+            </table>
+
+            <h3>Ledger entries for this application</h3>
+            <div class="empty" th:if="${ledger.isEmpty()}">No ledger entry was written for this application.</div>
+            <table th:unless="${ledger.isEmpty()}">
+                <thead>
+                <tr>
+                    <th>Entry</th>
+                    <th class="num">Days</th>
+                    <th class="money">Reserved (SGD)</th>
+                    <th class="money">Committed (SGD)</th>
+                    <th class="money">Reimbursed (SGD)</th>
+                    <th>Recorded</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="entry : ${ledger}">
+                    <td th:text="${entry.entryType}">RESERVE</td>
+                    <td class="num"
+                        th:text="${(entry.reservedUnitsDelta + entry.committedUnitsDelta) / 2.0}">1.0</td>
+                    <td class="money" th:text="'$' + ${#numbers.formatDecimal(entry.reservedAmountDelta, 1, 2)}">$0.00</td>
+                    <td class="money" th:text="'$' + ${#numbers.formatDecimal(entry.committedAmountDelta, 1, 2)}">$0.00</td>
+                    <td class="money" th:text="'$' + ${#numbers.formatDecimal(entry.reimbursedAmountDelta, 1, 2)}">$0.00</td>
+                    <td th:text="${@fmt.dateTime(entry.createdAt)}">1 Mar 2026</td>
+                </tr>
+                </tbody>
+            </table>
+
+            <h3>Fee claim</h3>
+            <div th:if="${claim == null}">
+                <p class="muted" th:if="${!canClaim}">
+                    A claim becomes possible once this course is completed. Only external and certification courses
+                    are reimbursable.
+                </p>
+                <p th:if="${canClaim}">
+                    This approved and completed course can be claimed.
+                    <a th:href="@{/employee/claims/new(applicationId=${application.id})}">Submit a claim</a>.
+                </p>
+            </div>
+            <div th:if="${claim != null}">
+                <p>
+                    Claim <a th:href="@{'/employee/claims/' + ${claim.id}}">#<span th:text="${claim.id}">1</span></a>
+                    revision <span th:text="${claim.revision}">1</span> —
+                    <span class="status" th:classappend="'status-' + ${claim.status.name() == 'APPROVED' or claim.status.name() == 'REIMBURSED' ? 'approved' : (claim.status.name() == 'REJECTED' ? 'rejected' : 'reserved')}"
+                          th:text="${claim.status}">SUBMITTED</span>
+                </p>
+                <p class="muted small" th:text="'Amount: S$' + ${#numbers.formatDecimal(claim.amount, 1, 2)}">Amount</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="grid two">
+        <div class="card">
+            <h2>Audit trail</h2>
+            <p class="card-note">Append-only record of every change to this application.</p>
+            <ol class="timeline">
+                <li th:each="event : ${timeline}">
+                    <div class="when"
+                         th:text="${@fmt.dateTime(event.createdAt)}">1 Mar 2026</div>
+                    <div class="what">
+                        <span th:text="${event.eventType}">SUBMITTED</span>
+                        <span class="muted"
+                              th:text="${event.fromState == null ? '' : event.fromState + ' to ' + event.toState}">Applied to Approved</span>
+                    </div>
+                    <div class="why" th:if="${event.reason != null}" th:text="${event.reason}">Reason</div>
+                    <div class="why" th:text="'Actor: ' + ${event.actorLabel}">Actor</div>
+                </li>
+            </ol>
+        </div>
+
+        <div class="card" th:if="${allowedActions.contains('cancel') or allowedActions.contains('delete') or allowedActions.contains('complete')}">
+            <h2>Available actions</h2>
+
+            <div th:if="${allowedActions.contains('cancel')}">
+                <h3>Cancel this application</h3>
+                <p class="card-note">Cancelling releases the reserved training days and budget immediately.</p>
+                <form th:action="@{'/employee/applications/' + ${application.id} + '/cancel'}" method="post">
+                    <input type="hidden" name="version" th:value="${application.version}"/>
+                    <div class="field">
+                        <label for="cancelReason">Reason for cancelling</label>
+                        <textarea id="cancelReason" name="reason" rows="2" maxlength="500" required></textarea>
+                    </div>
+                    <button class="danger" type="submit">Cancel application</button>
+                </form>
+                <hr/>
+            </div>
+
+            <div th:if="${allowedActions.contains('complete')}" id="complete-box">
+                <h3>Mark the course as completed</h3>
+                <p class="card-note">
+                    Only an approved course whose end date has passed can be completed
+                    (today is <span th:text="${@fmt.date(today)}">1 Mar 2026</span>).
+                </p>
+                <form th:action="@{'/employee/applications/' + ${application.id} + '/complete'}" method="post">
+                    <input type="hidden" name="version" th:value="${application.version}"/>
+                    <div class="field">
+                        <label for="experience">What you learned and how you will apply it</label>
+                        <textarea id="experience" name="experience" rows="3" maxlength="1000" required></textarea>
+                    </div>
+                    <button type="submit">Mark as completed</button>
+                </form>
+                <hr/>
+            </div>
+
+            <div th:if="${allowedActions.contains('delete')}">
+                <h3>Withdraw this application</h3>
+                <p class="card-note">
+                    The record is kept for reporting but disappears from your active list. Deletion is possible only
+                    while no decision has been taken.
+                </p>
+                <form th:action="@{'/employee/applications/' + ${application.id} + '/delete'}" method="post"
+                      onsubmit="return confirm('Withdraw this application? The record is kept for reporting.');">
+                    <input type="hidden" name="version" th:value="${application.version}"/>
+                    <button class="danger" type="submit">Withdraw application</button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <div class="actions-bar">
+        <a class="button secondary" th:href="@{/employee/applications}">Back to my applications</a>
+        <a class="button secondary" th:href="@{/calendar}">Open the calendar</a>
+    </div>
+</main>
+<footer class="site" th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

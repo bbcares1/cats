@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments/layout :: head(${staffId == null ? 'Add staff member' : 'Edit staff member'})}"></head>
+<body>
+<div th:replace="~{fragments/layout :: topbar('admin')}"></div>
+<main class="container">
+    <div th:replace="~{fragments/layout :: flash}"></div>
+
+    <h1 th:text="${staffId == null ? 'Add staff member' : 'Edit staff member'}">Add staff member</h1>
+    <p class="card-note">
+        The login account and the staff record are created together so nobody can apply for training without an
+        account.
+    </p>
+
+    <div class="grid two">
+        <div class="card">
+            <h2>Staff record</h2>
+            <form th:action="${staffId == null ? '/admin/staff' : '/admin/staff/' + staffId + '/update'}"
+                  th:object="${form}" method="post">
+                <input type="hidden" th:field="*{id}"/>
+                <input type="hidden" th:field="*{version}"/>
+
+                <div class="field">
+                    <label for="staffNo">Staff number</label>
+                    <input type="text" id="staffNo" th:field="*{staffNo}" maxlength="30" required/>
+                    <p class="error" th:if="${#fields.hasErrors('staffNo')}" th:errors="*{staffNo}">error</p>
+                </div>
+                <div class="field">
+                    <label for="fullName">Full name</label>
+                    <input type="text" id="fullName" th:field="*{fullName}" maxlength="120" required/>
+                    <p class="error" th:if="${#fields.hasErrors('fullName')}" th:errors="*{fullName}">error</p>
+                </div>
+                <div class="field">
+                    <label for="email">Work email</label>
+                    <input type="email" id="email" th:field="*{email}" maxlength="150" required/>
+                    <p class="error" th:if="${#fields.hasErrors('email')}" th:errors="*{email}">error</p>
+                </div>
+                <div class="field">
+                    <label for="department">Department</label>
+                    <input type="text" id="department" th:field="*{department}" maxlength="120"/>
+                </div>
+                <div class="field">
+                    <label for="designationCode">Designation code</label>
+                    <input type="text" id="designationCode" th:field="*{designationCode}" maxlength="30"/>
+                </div>
+                <div class="field checkbox">
+                    <input type="checkbox" id="active" th:field="*{active}"/>
+                    <label for="active">Staff record is active (appears in lists and pickers)</label>
+                </div>
+
+                <h3>Login account</h3>
+                <div class="field">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" th:field="*{username}" minlength="4" maxlength="60"/>
+                    <p class="error" th:if="${#fields.hasErrors('username')}" th:errors="*{username}">error</p>
+                    <p class="help">The employee signs in with this name and the password set below.</p>
+                </div>
+                <div class="field">
+                    <label for="initialPassword">
+                        <span th:text="${staffId == null ? 'Initial password' : 'New password (leave blank to keep)'}">Initial password</span>
+                    </label>
+                    <input type="password" id="initialPassword" th:field="*{initialPassword}" maxlength="100"
+                           autocomplete="new-password"/>
+                    <p class="error" th:if="${#fields.hasErrors('initialPassword')}" th:errors="*{initialPassword}">error</p>
+                    <p class="help">At least 8 characters with a letter and a digit; share it securely and ask the
+                        employee to change it.</p>
+                </div>
+
+                <div class="field">
+                    <label>Roles</label>
+                    <div class="checkbox-group">
+                        <label th:each="role : ${roleCodes}">
+                            <input type="checkbox" name="roles" th:value="${role}"
+                                   th:checked="${form.roles != null and form.roles.contains(role)}"/>
+                            <span th:text="${role}">EMPLOYEE</span>
+                        </label>
+                    </div>
+                    <p class="help">
+                        EMPLOYEE applies for training, MANAGER decides applications, ADMIN configures the system.
+                        An administrator never approves applications.
+                    </p>
+                </div>
+
+                <div class="actions-bar">
+                    <button type="submit" th:text="${staffId == null ? 'Create staff member' : 'Save changes'}">Save</button>
+                    <a class="button secondary" th:href="@{/admin/staff}">Cancel</a>
+                </div>
+            </form>
+        </div>
+
+        <div class="card">
+            <h2>Reporting line</h2>
+            <div th:if="${staffId == null}">
+                <p class="muted">
+                    Save the staff member first, then
+                    <a th:href="@{/admin/approvals}">assign an approving manager</a>. A manager can only be assigned to
+                    their own team.
+                </p>
+            </div>
+            <div th:if="${staffId != null}">
+                <div th:if="${route == null}" class="empty">
+                    No approving manager is set. New applications from this employee cannot be routed anywhere yet.
+                </div>
+                <dl class="definition" th:if="${route != null}">
+                    <dt>Approving manager</dt>
+                    <dd th:text="${route.managerName}">Maria Lim</dd>
+                </dl>
+                <p class="muted small">
+                    <a th:href="@{/admin/approvals}">Change reporting lines</a> — the change is audited and reassigns
+                    any pending application.
+                </p>
+            </div>
+        </div>
+    </div>
+
+    <div class="actions-bar">
+        <a class="button secondary" th:href="@{/admin/staff}">Back to staff list</a>
+    </div>
+</main>
+<footer class="site" th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments/layout :: head('Reports')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: topbar('reports')}"></div>
+<main class="container">
+    <div th:replace="~{fragments/layout :: flash}"></div>
+
+    <h1>Reports</h1>
+    <p class="card-note" th:text="${summary}">Showing all team members</p>
+    <p class="card-note">
+        Only <strong th:text="${includedStatuses}">Approved and Completed</strong> applications are counted, so
+        requests that are still pending never inflate the numbers.
+    </p>
+
+    <nav class="tabs">
+        <a th:href="@{/manager/reports(tab='training', year=${year}, employeeId=${employeeId}, category=${category})}"
+           th:classappend="${tab == 'training' ? 'active' : ''}">Training report</a>
+        <a th:href="@{/manager/reports(tab='budget', year=${year}, employeeId=${employeeId}, category=${category})}"
+           th:classappend="${tab == 'budget' ? 'active' : ''}">Budget report</a>
+    </nav>
+
+    <form class="filter-bar" method="get" th:action="@{/manager/reports}">
+        <input type="hidden" name="tab" th:value="${tab}"/>
+        <div class="field">
+            <label for="from">From</label>
+            <input type="date" id="from" name="from" th:value="${from}"/>
+        </div>
+        <div class="field">
+            <label for="to">To</label>
+            <input type="date" id="to" name="to" th:value="${to}"/>
+        </div>
+        <div class="field">
+            <label for="year">Budget year</label>
+            <input type="number" id="year" name="year" min="2000" max="2100" th:value="${year}"/>
+        </div>
+        <div class="field">
+            <label for="category">Category</label>
+            <select id="category" name="category">
+                <option value="">All categories</option>
+                <option th:each="code : ${categories}" th:value="${code}"
+                        th:selected="${category != null and category == code}"
+                        th:text="${code.displayName}">External</option>
+            </select>
+        </div>
+        <div class="field">
+            <label for="employeeId">Employee</label>
+            <select id="employeeId" name="employeeId">
+                <option value="">Whole team</option>
+                <option th:each="member : ${team}" th:value="${member.id}"
+                        th:selected="${employeeId != null and employeeId == member.id}"
+                        th:text="${member.fullName}">Alice Tan</option>
+            </select>
+        </div>
+        <button type="submit">Apply</button>
+    </form>
+
+    <section th:if="${tab == 'training'}">
+        <div class="card">
+            <h2>Training report</h2>
+            <p class="muted small">
+                <a th:href="@{/manager/reports/training.csv(from=${from}, to=${to}, category=${category}, employeeId=${employeeId})}">
+                    Download as CSV</a>
+                — one row per application.
+            </p>
+            <div class="empty" th:if="${trainingRows.isEmpty()}">No approved or completed training in this period.</div>
+            <table th:unless="${trainingRows.isEmpty()}">
+                <thead>
+                <tr>
+                    <th>Employee</th><th>Department</th><th>Reference</th><th>Course</th><th>Category</th>
+                    <th>Provider</th><th>Period</th><th class="num">Days</th><th class="money">Fee (SGD)</th><th>Status</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="row : ${trainingRows}">
+                    <td th:text="${row.employeeName}">Alice Tan</td>
+                    <td th:text="${row.department}">Digital Services</td>
+                    <td th:text="${row.referenceNo}">APP-2026-0001</td>
+                    <td th:text="${row.courseTitle}">Course</td>
+                    <td th:text="${row.categoryLabel}">External</td>
+                    <td th:text="${row.providerName}">Provider</td>
+                    <td th:text="${row.periodLabel}">1 Mar 2026</td>
+                    <td class="num" th:text="${row.units / 2.0}">1.0</td>
+                    <td class="money" th:text="'$' + ${@fmt.money(row.fee)}">$0.00</td>
+                    <td th:text="${row.statusLabel}">Approved</td>
+                </tr>
+                <tr class="total-row">
+                    <td colspan="7">Total</td>
+                    <td class="num" th:text="${trainingTotalUnits / 2.0}">1.0</td>
+                    <td colspan="2"></td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section th:if="${tab == 'budget'}">
+        <div class="card">
+            <h2>Budget report — <span th:text="${year}">2026</span></h2>
+            <p class="muted small">
+                <a th:href="@{/manager/reports/budget.csv(year=${year}, category=${category}, employeeId=${employeeId})}">
+                    Download as CSV</a>
+                — one row per employee.
+            </p>
+            <div class="empty" th:if="${budgetRows.isEmpty()}">No entitlement is configured for this team.</div>
+            <table th:unless="${budgetRows.isEmpty()}">
+                <thead>
+                <tr>
+                    <th>Employee</th><th>Department</th><th>Year</th>
+                    <th class="num">Entitled</th><th class="num">Reserved</th><th class="num">Committed</th>
+                    <th class="num">Available</th>
+                    <th class="money">Budget (SGD)</th><th class="money">Reserved</th>
+                    <th class="money">Committed</th><th class="money">Reimbursed</th><th class="money">Left</th>
+                    <th>Usage</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="row : ${budgetRows}">
+                    <td th:text="${row.employeeName}">Alice Tan</td>
+                    <td th:text="${row.department}">Digital Services</td>
+                    <td th:text="${row.calendarYear}">2026</td>
+                    <td class="num" th:text="${row.entitledUnits / 2.0}">10.0</td>
+                    <td class="num" th:text="${row.reservedUnits / 2.0}">0.0</td>
+                    <td class="num" th:text="${row.committedUnits / 2.0}">0.0</td>
+                    <td class="num" th:text="${row.availableUnits / 2.0}">10.0</td>
+                    <td class="money" th:text="'$' + ${@fmt.money(row.budgetAmount)}">$0.00</td>
+                    <td class="money" th:text="'$' + ${@fmt.money(row.reservedAmount)}">$0.00</td>
+                    <td class="money" th:text="'$' + ${@fmt.money(row.committedAmount)}">$0.00</td>
+                    <td class="money" th:text="'$' + ${@fmt.money(row.reimbursedAmount)}">$0.00</td>
+                    <td class="money" th:text="'$' + ${@fmt.money(row.availableAmount)}">$0.00</td>
+                    <td th:text="${row.utilisationLabel}">0%</td>
+                </tr>
+                </tbody>
+            </table>
+            <p class="muted small">
+                Reserved budget belongs to pending claims; committed budget belongs to approved claims that finance
+                has not reimbursed yet; reimbursed budget is money already paid out.
+            </p>
+        </div>
+    </section>
+
+    <div class="actions-bar">
+        <a class="button secondary" th:href="@{/manager/approvals}">Back to the queue</a>
+        <a class="button secondary" th:href="@{/manager/team/history}">Team history</a>
+    </div>
+</main>
+<footer class="site" th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

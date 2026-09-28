@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments/layout :: head('Public holidays')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: topbar('admin')}"></div>
+<main class="container">
+    <div th:replace="~{fragments/layout :: flash}"></div>
+
+    <h1>Public holidays</h1>
+    <p class="card-note">
+        Training days are counted from weekdays only: public holidays and weekends never consume entitlement. The
+        same rules are applied during the pre-save preview and again on save, so a preview can never promise
+        something the server refuses.
+    </p>
+
+    <form class="filter-bar" method="get" th:action="@{/admin/holidays}">
+        <div class="field">
+            <label for="year">Year</label>
+            <select id="year" name="year">
+                <option th:each="option : ${years}" th:value="${option}" th:selected="${option == year}"
+                        th:text="${option}">2026</option>
+            </select>
+        </div>
+        <button type="submit">Show year</button>
+    </form>
+
+    <div class="grid two">
+        <div class="card">
+            <h2>Add or replace a holiday</h2>
+            <form th:action="@{/admin/holidays}" th:object="${holidayForm}" method="post">
+                <div class="field">
+                    <label for="holidayDate">Date</label>
+                    <input type="date" id="holidayDate" th:field="*{holidayDate}" required/>
+                </div>
+                <div class="field">
+                    <label for="name">Name</label>
+                    <input type="text" id="name" th:field="*{name}" maxlength="120" required/>
+                </div>
+                <div class="field">
+                    <label for="sourceNote">Source note</label>
+                    <input type="text" id="sourceNote" th:field="*{sourceNote}" maxlength="200"
+                           placeholder="Ministry of Manpower gazette"/>
+                </div>
+                <button type="submit">Save holiday</button>
+            </form>
+        </div>
+
+        <div class="card">
+            <h2>Holidays in <span th:text="${year}">2026</span></h2>
+            <div class="empty" th:if="${holidays.isEmpty()}">No public holiday recorded for this year.</div>
+            <table th:unless="${holidays.isEmpty()}">
+                <thead><tr><th>Date</th><th>Name</th><th>Source</th><th></th></tr></thead>
+                <tbody>
+                <tr th:each="holiday : ${holidays}">
+                    <td th:text="${@fmt.date(holiday.holidayDate)}">1 Jan 2026</td>
+                    <td th:text="${holiday.name}">New Year's Day</td>
+                    <td th:text="${holiday.sourceNote}">MOM</td>
+                    <td>
+                        <form class="inline" th:action="@{'/admin/holidays/' + ${holiday.holidayDate} + '/delete'}"
+                              method="post"
+                              onsubmit="return confirm('Remove this public holiday?');">
+                            <button class="danger small" type="submit">Remove</button>
+                        </form>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <div class="card">
+        <h2>Employees with pending requests in this period</h2>
+        <p class="card-note">
+            Adding a holiday changes how many days their request costs, so the amounts must be checked before the
+            change is made.
+        </p>
+        <div class="empty" th:if="${affected.isEmpty()}">No pending application is affected.</div>
+        <ul class="plain">
+            <li th:each="entry : ${affected}" th:text="${entry}">Alice Tan (2)</li>
+        </ul>
+    </div>
+
+    <div class="actions-bar">
+        <a class="button secondary" th:href="@{/admin}">Back to administration</a>
+        <a class="button secondary" th:href="@{/admin/catalogue(tab='holidays')}">Course catalogue</a>
+    </div>
+</main>
+<footer class="site" th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

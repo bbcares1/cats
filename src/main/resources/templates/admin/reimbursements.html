@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments/layout :: head('Reimbursement queue')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: topbar('admin')}"></div>
+<main class="container wide">
+    <div th:replace="~{fragments/layout :: flash}"></div>
+
+    <h1>Reimbursement queue</h1>
+    <p class="card-note">
+        A manager's approval commits the money; the reimbursement records the actual payment. Registering the same
+        payment twice is refused, so the budget can never be released twice.
+    </p>
+
+    <nav class="tabs">
+        <a th:href="@{/admin/reimbursements(tab='pending')}" th:classappend="${tab == 'pending' ? 'active' : ''}">
+            Awaiting payment <span class="count" th:text="${pending.size()}">0</span>
+        </a>
+        <a th:href="@{/admin/reimbursements(tab='history')}" th:classappend="${tab == 'history' ? 'active' : ''}">
+            Paid
+        </a>
+    </nav>
+
+    <section th:if="${tab == 'pending'}">
+        <div class="card">
+            <h2>
+                Total awaiting reimbursement:
+                S$<span th:text="${@fmt.money(pendingTotal)}">0.00</span>
+            </h2>
+            <div class="empty" th:if="${pending.isEmpty()}">Every approved claim has been reimbursed.</div>
+            <table th:unless="${pending.isEmpty()}">
+                <thead>
+                <tr>
+                    <th>Employee</th><th>Course</th><th>Period</th><th>Approved by</th>
+                    <th class="money">Amount (SGD)</th><th>Evidence</th><th>Register payment</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="claim : ${pending}">
+                    <td th:text="${claim.application.employee.fullName}">Alice Tan</td>
+                    <td th:text="${claim.application.courseTitle}">Course</td>
+                    <td th:text="${@fmt.period(claim.application)}">1 Mar 2026</td>
+                    <td th:text="${claim.approver == null ? '—' : claim.approver.fullName}">Maria Lim</td>
+                    <td class="money" th:text="'$' + ${@fmt.money(claim.amount)}">$0.00</td>
+                    <td>
+                        <ul class="plain" th:if="${!claim.documentsForCurrentRevision.isEmpty()}">
+                            <li th:each="document : ${claim.documentsForCurrentRevision}">
+                                <a th:href="@{'/claims/documents/' + ${document.id}}"
+                                   th:text="${document.documentType.displayName}">Receipt</a>
+                            </li>
+                        </ul>
+                        <span class="muted small" th:if="${claim.documentsForCurrentRevision.isEmpty()}">No attachment</span>
+                    </td>
+                    <td>
+                        <form class="inline" th:action="@{'/admin/claims/' + ${claim.id} + '/reimburse'}"
+                              th:object="${reimburseForm}" method="post">
+                            <input type="hidden" name="version" th:value="${claim.version}"/>
+                            <input type="text" th:field="*{reference}" placeholder="Payment reference" maxlength="60" required/>
+                            <button class="small" type="submit">Mark paid</button>
+                        </form>
+                    </td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <section th:if="${tab == 'history'}">
+        <div class="card">
+            <h2>Reimbursed claims</h2>
+            <div class="empty" th:if="${history.isEmpty()}">No payment has been registered yet.</div>
+            <table th:unless="${history.isEmpty()}">
+                <thead>
+                <tr>
+                    <th>Employee</th><th>Course</th><th class="money">Amount (SGD)</th>
+                    <th>Payment reference</th><th>Registered by</th><th>Registered</th>
+                </tr>
+                </thead>
+                <tbody>
+                <tr th:each="claim : ${history}">
+                    <td th:text="${claim.application.employee.fullName}">Alice Tan</td>
+                    <td th:text="${claim.application.courseTitle}">Course</td>
+                    <td class="money" th:text="'$' + ${@fmt.money(claim.amount)}">$0.00</td>
+                    <td th:text="${claim.reimbursementReference}">PAY-2026-0001</td>
+                    <td th:text="${claim.reimbursedBy == null ? '—' : claim.reimbursedBy.fullName}">Admin</td>
+                    <td th:text="${@fmt.dateTime(claim.reimbursedAt)}">1 Mar 2026</td>
+                </tr>
+                </tbody>
+            </table>
+        </div>
+    </section>
+
+    <div class="actions-bar">
+        <a class="button secondary" th:href="@{/admin}">Back to administration</a>
+    </div>
+</main>
+<footer class="site" th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>

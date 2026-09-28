@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" lang="en">
+<head th:replace="~{fragments/layout :: head('My fee claims')}"></head>
+<body>
+<div th:replace="~{fragments/layout :: topbar('claims')}"></div>
+<main class="container">
+    <div th:replace="~{fragments/layout :: flash}"></div>
+
+    <div class="page-head">
+        <h1>My fee claims</h1>
+        <a class="button" th:href="@{/employee/claims/new}" th:if="${!claimable.isEmpty()}">Submit a claim</a>
+    </div>
+    <p class="card-note">
+        A claim may be raised only for an <strong>approved and completed</strong> external or certification course,
+        and only once per application.
+    </p>
+
+    <div class="card">
+        <h2>Claims</h2>
+        <div class="empty" th:if="${claims.isEmpty()}">
+            You have not submitted any claim yet.
+            <a th:href="@{/employee/applications}">Complete a course</a> to be able to claim its fee.
+        </div>
+        <table th:unless="${claims.isEmpty()}">
+            <thead>
+            <tr>
+                <th>Claim</th>
+                <th>Course</th>
+                <th>Period</th>
+                <th class="money">Amount (SGD)</th>
+                <th>Approver</th>
+                <th>Status</th>
+                <th>Submitted</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="claim : ${claims}">
+                <td>
+                    <a th:href="@{'/employee/claims/' + ${claim.id}}">#<span th:text="${claim.id}">1</span></a>
+                    <span class="muted small" th:text="'revision ' + ${claim.revision}">revision 1</span>
+                </td>
+                <td th:text="${claim.application.courseTitle}">Course</td>
+                <td th:text="${@fmt.period(claim.application)}">1 Mar 2026</td>
+                <td class="money" th:text="'$' + ${@fmt.money(claim.amount)}">$0.00</td>
+                <td th:text="${claim.approver.fullName}">Manager</td>
+                <td>
+                    <span class="status" th:classappend="'status-' + ${claim.status.name() == 'SUBMITTED' ? 'pending' : (claim.status.name() == 'REJECTED' ? 'rejected' : 'approved')}"
+                          th:text="${claim.status}">SUBMITTED</span>
+                </td>
+                <td th:text="${@fmt.dateTime(claim.submittedAt)}">1 Mar 2026</td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="card">
+        <h2>Courses you can still claim</h2>
+        <div class="empty" th:if="${claimable.isEmpty()}">Nothing to claim at the moment.</div>
+        <table th:unless="${claimable.isEmpty()}">
+            <thead>
+            <tr>
+                <th>Reference</th>
+                <th>Course</th>
+                <th>Period</th>
+                <th class="money">Fee (SGD)</th>
+                <th></th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="application : ${claimable}">
+                <td th:text="${application.referenceNo}">APP-2026-0001</td>
+                <td th:text="${application.courseTitle}">Course</td>
+                <td th:text="${@fmt.period(application)}">1 Mar 2026</td>
+                <td class="money" th:text="'$' + ${@fmt.money(application.courseFee)}">$0.00</td>
+                <td><a class="button small" th:href="@{/employee/claims/new(applicationId=${application.id})}">Claim the fee</a></td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <div class="actions-bar">
+        <a class="button secondary" th:href="@{/employee/dashboard}">Back to dashboard</a>
+    </div>
+</main>
+<footer class="site" th:replace="~{fragments/layout :: footer}"></footer>
+</body>
+</html>
